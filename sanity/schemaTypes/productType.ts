@@ -19,17 +19,35 @@ export const productType = defineType({
       type: 'slug',
       options: {
         source: 'name',
-        maxLength: 96,
+        maxLength: 96
       },
-      validation: Rule => Rule.required(),
+      validation: Rule => Rule.required()
     }),
     defineField({
       name: 'image',
-      title: 'Product Image',
+      title: 'Product Thumpnail Image',
       type: 'image',
       options: {
         hotspot: true
       }
+    }),
+    defineField({
+      name: 'productImages',
+      title: 'Product Images',
+      type: 'array',
+      of: [
+        {
+          type: 'image',
+          options: {
+            hotspot: true
+          }
+        }
+      ],
+      options: {
+        layout: 'grid'
+      },
+      description:
+        'Upload multiple images (can add one by one or multiple at once)'
     }),
     defineField({
       name: 'description',
@@ -62,7 +80,7 @@ export const productType = defineType({
       price: 'price'
     },
     prepare (selection) {
-      const title = selection.title || 'No name' 
+      const title = selection.title || 'No name'
       const price = selection.price !== undefined ? `$${selection.price}` : ''
       return {
         title,
