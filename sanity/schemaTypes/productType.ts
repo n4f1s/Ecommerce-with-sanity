@@ -55,6 +55,11 @@ export const productType = defineType({
       type: 'blockContent'
     }),
     defineField({
+      name: 'features',
+      title: 'Features',
+      type: 'blockContent'
+    }),
+    defineField({
       name: 'price',
       title: 'Price',
       type: 'number',

@@ -64,10 +64,10 @@ export default function ProductImageGallery({
                 </Swiper>
 
                 {/* 🔵 Custom Navigation Arrows */}
-                <div className="custom-prev absolute top-1/2 left-2 -translate-y-1/2 z-10 size-10 flex justify-center rounded-full bg-blue-500 shadow-md cursor-pointer hover:bg-blue-700 transition-all duration-300">
+                <div className="custom-prev absolute top-1/2 left-2 -translate-y-1/2 z-10 size-10 flex justify-center rounded-full bg-theme-primary shadow-md cursor-pointer hover:bg-theme-secondary transition-all duration-300">
                     <span className="text-3xl font-bold text-white">‹</span>
                 </div>
-                <div className="custom-next absolute top-1/2 right-2 -translate-y-1/2 z-10 size-10 flex justify-center rounded-full bg-blue-500 shadow-md cursor-pointer hover:bg-blue-700 transition-all duration-300">
+                <div className="custom-next absolute top-1/2 right-2 -translate-y-1/2 z-10 size-10 flex justify-center rounded-full bg-theme-primary shadow-md cursor-pointer hover:bg-theme-secondary transition-all duration-300">
                     <span className="text-3xl font-bold text-white">›</span>
                 </div>
             </div>
@@ -86,7 +86,7 @@ export default function ProductImageGallery({
                         <SwiperSlide key={i}>
                             <div
                                 className={`relative aspect-square overflow-hidden rounded-md border-2 cursor-pointer transition-all duration-300 ${activeIndex === i
-                                    ? "border-blue-500"
+                                    ? "border-theme-primary"
                                     : "border-transparent hover:border-gray-300"
                                     }`}
                             >

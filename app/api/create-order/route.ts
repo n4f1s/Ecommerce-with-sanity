@@ -1,50 +1,68 @@
 import { NextResponse } from "next/server";
 import { backendClient } from "@/sanity/lib/backendClient";
 import crypto from "crypto";
+import { Order } from "@/sanity.types";
 
-interface OrderItem {
-  product: {
-    _id: string;
-  };
-  quantity: number;
-}
-
-interface OrderRequestBody {
-  customerName: string;
-  phoneNumber: string;
-  address: string;
-  items: OrderItem[];
-  totalPrice: number;
-}
-
+// POST /api/create-order
 export async function POST(req: Request) {
   try {
-    const body: OrderRequestBody = await req.json();
-    const { customerName, phoneNumber, address, items, totalPrice } = body;
+    const body: Order & {
+      division?: string;
+      city?: string;
+      postalCode?: string;
+      deliveryInstruction?: string;
+      items: {
+        product: { _id: string };
+        quantity: number;
+      }[];
+    } = await req.json();
 
-    // Validation
-    if (!customerName || !phoneNumber || !address || !items?.length) {
+    const {
+      customerName,
+      phoneNumber,
+      address,
+      division,
+      city,
+      postalCode,
+      deliveryInstruction,
+      items,
+      totalPrice,
+    } = body;
+
+    // 🔍 Validation
+    if (
+      !customerName ||
+      !phoneNumber ||
+      !address ||
+      !division ||
+      !items?.length
+    ) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required shipping or order fields." },
         { status: 400 }
       );
     }
 
-    // Generate order number
-    const orderNumber = Math.random().toString(36).substring(2, 10).toUpperCase();
-
-    // Prepare Sanity order document
+    // 🧾 Generate readable order number
+    const orderNumber = crypto.randomUUID();
+    
+    // 🧱 Prepare the Sanity order document
     const orderDoc = {
       _type: "order",
       orderNumber,
       customerName,
       phoneNumber,
       address,
+      division,
+      city,
+      postalCode,
+      deliveryInstruction: deliveryInstruction || "",
       totalPrice,
+      // currency: "BDT",
       paymentMethod: "Cash on Delivery",
       status: "pending",
       orderDate: new Date().toISOString(),
-      products: items.map((item): Record<string, unknown> => ({
+      products: items.map((item) => ({
         _type: "object",
         _key: crypto.randomUUID(),
         product: {
@@ -55,12 +73,18 @@ export async function POST(req: Request) {
       })),
     };
 
-    // Write to Sanity
+    // 🧠 Store in Sanity
     const result = await backendClient.create(orderDoc);
 
-    return NextResponse.json({ success: true, orderId: result._id });
+    // ✅ Response
+    return NextResponse.json({
+      success: true,
+      message: "Order created successfully",
+      orderId: result._id,
+      orderNumber,
+    });
   } catch (error) {
-    console.error("Error creating order:", error);
+    console.error("❌ Error creating order:", error);
     return NextResponse.json(
       { error: "Failed to create order" },
       { status: 500 }

@@ -23,7 +23,7 @@ export default function CheckoutButtonWithModal({
     <>
       <Button
         onClick={handleCheckOut}
-        className={`bg-theme-primary hover:bg-theme-primary/90 ${
+        className={`bg-theme-primary hover:bg-theme-secondary ${
           isOutOfStock ? "opacity-60 cursor-not-allowed" : ""
         }`}
         disabled={isOutOfStock}

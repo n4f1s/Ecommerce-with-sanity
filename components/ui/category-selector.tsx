@@ -28,7 +28,7 @@ export function CategorySelectorComponent({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full max-w-full relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 bg-blue-500 hover:bg-blue-700 text-white hover:text-white fontbold py-2 px-4 rounded"
+                    className="w-full max-w-full relative flex justify-between sm:flex-none items-center space-x-2 bg-theme-primary hover:bg-theme-secondary text-white hover:text-white fontbold py-2 px-4 rounded cursor-pointer"
                 >
                     {value
                         ? categories.find((e) => e._id === value)?.title

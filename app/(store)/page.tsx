@@ -1,7 +1,9 @@
 import BlackFridayBanner from "@/components/BlackFridayBanner";
+import HeroBanner from "@/components/HeroBanner";
 import ProductsView from "@/components/ProductsView";
 import { getAllCategories } from "@/sanity/lib/products/getAllCategories";
 import { getAllProducts } from "@/sanity/lib/products/getAllProducts";
+
 
 
 
@@ -14,6 +16,8 @@ export default async function Home() {
 
   return (
     <div className="">
+      <HeroBanner />
+
       <BlackFridayBanner />
 
       <div className="flex flex-col items-center justify-top bg-gray-100">

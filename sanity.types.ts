@@ -37,7 +37,12 @@ export type Order = {
   orderNumber?: string;
   customerName?: string;
   phoneNumber?: string;
+  email?: string;
   address?: string;
+  division?: string;
+  city?: string;
+  postalCode?: string;
+  deliveryInstruction?: string;
   products?: Array<{
     product?: {
       _ref: string;
@@ -130,6 +135,7 @@ export type Product = {
     _key: string;
   }>;
   description?: BlockContent;
+  features?: BlockContent;
   price?: number;
   categories?: Array<{
     _ref: string;
@@ -312,6 +318,7 @@ export type ALL_PRODUCTS_QUERYResult = Array<{
     _key: string;
   }>;
   description?: BlockContent;
+  features?: BlockContent;
   price?: number;
   categories?: Array<{
     _ref: string;
@@ -360,6 +367,7 @@ export type PRODUCT_BY_ID_QUERYResult = {
     _key: string;
   }>;
   description?: BlockContent;
+  features?: BlockContent;
   price?: number;
   categories?: Array<{
     _ref: string;
@@ -408,6 +416,7 @@ export type PRODUCT_BY_CATEGORY_QUERYResult = Array<{
     _key: string;
   }>;
   description?: BlockContent;
+  features?: BlockContent;
   price?: number;
   categories?: Array<{
     _ref: string;
@@ -456,6 +465,7 @@ export type PRODUCT_SEARCH_QUERYResult = Array<{
     _key: string;
   }>;
   description?: BlockContent;
+  features?: BlockContent;
   price?: number;
   categories?: Array<{
     _ref: string;

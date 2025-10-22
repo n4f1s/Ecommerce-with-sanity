@@ -20,15 +20,16 @@ function ProductThumb({ product }: { product: Product }) {
             className={`group flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${isOutOfStock ? "opacity-50" : ""
                 }`}
         >
-            <div className="relative aspect-square w-full h-full overflow-hidden">
+            <div className="relative aspect-square w-full sm:h-[250px] overflow-hidden">
                 <Image
                     src={
                         product.image
-                            ? urlFor(product.image).width(500).format("webp").bg("ffffff").url()
+                            ? urlFor(product.image).width(600).format("webp").bg("ffffff").url()
                             : "/placeholder.webp"
                     }
                     alt={product.name || "Product image"}
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 {isOutOfStock && (
