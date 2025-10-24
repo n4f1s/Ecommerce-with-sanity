@@ -27,7 +27,7 @@ const Header = () => {
                     href="/"
                     className="text-2xl font-bold text-theme-primary hover:opacity-70 cursor-pointer mx-auto sm:mx-0"
                 >
-                    Shoper
+                    ShopHikes
                 </Link>
 
                 {/* Search Form */}
