@@ -134,4 +134,12 @@
   @apply sm:px-16 px-4 py-10 sm:py-16 max-w-[1500px] w-full h-full mx-auto relative;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+/* [id] {
+  scroll-margin-top: 80px;
+} */
+
 

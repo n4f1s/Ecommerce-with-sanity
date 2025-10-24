@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { BasketItem } from "./store";
 
 export interface Order {
-  id: string; // Same as returned from Sanity (_id or orderNumber)
+  id: string; 
   customerName: string;
   phoneNumber: string;
   address: string;

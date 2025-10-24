@@ -1,11 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
 export default function HeroBanner() {
+    const handleScroll = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        const section = document.getElementById("products");
+        if (section) {
+            section.scrollIntoView({ behavior: "smooth" });
+        }
+    };
+
+
     return (
         <section className="relative bg-gradient-to-br from-theme-primary/90 to-orange-500 text-white overflow-hidden">
             <div className="wrapper flex flex-col-reverse lg:flex-row items-center justify-between gap-10">
@@ -26,11 +34,9 @@ export default function HeroBanner() {
                         এবং দ্রুততম সময়ে পণ্য বুঝে নিন। দ্রুত ডেলিভারি। ক্যাশ অন ডেলিভারি সুবিধা।
                     </p>
 
-                    <Link href="/">
-                        <Button className="text-lg">
-                            কালেকশন দেখুন
-                        </Button>
-                    </Link>
+                    <Button onClick={handleScroll} className="text-lg">
+                        কালেকশন দেখুন
+                    </Button>
                 </motion.div>
 
                 {/* Right Image / Visual */}

@@ -20,6 +20,21 @@ const divisions = [
   "Mymensingh",
 ];
 
+const formatDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12; // convert 0 -> 12 for 12 AM
+  const hoursStr = String(hours).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hoursStr}:${minutes} ${ampm}`;
+};
+
+
 export default function ShippingAddressForm({ onSuccess }: ShippingAddressFormProps) {
   const { getGroupedItems, getTotalPrice, clearBasket } = useBasketStore();
   const { addOrder } = useOrderStore();
@@ -35,6 +50,8 @@ export default function ShippingAddressForm({ onSuccess }: ShippingAddressFormPr
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const DELIVERY_CHARGE = 120;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -46,22 +63,22 @@ export default function ShippingAddressForm({ onSuccess }: ShippingAddressFormPr
         body: JSON.stringify({
           ...formData,
           items: getGroupedItems(),
-          totalPrice: getTotalPrice(),
+          totalPrice: getTotalPrice() + DELIVERY_CHARGE,
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
 
-        // ✅ Add to order store using spread syntax
+        // Add to order store using spread syntax
         addOrder({
           ...formData,
           id: data.orderNumber, // returned from Sanity
           items: getGroupedItems(),
-          totalPrice: getTotalPrice(),
+          totalPrice: getTotalPrice() + DELIVERY_CHARGE,
           paymentMethod: "Cash on Delivery",
           status: "pending",
-          orderDate: new Date().toISOString(),
+          orderDate: formatDate(new Date()),
         });
 
         clearBasket();

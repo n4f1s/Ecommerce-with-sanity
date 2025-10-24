@@ -15,16 +15,16 @@ export default async function Home() {
   const categories = await getAllCategories();
 
   return (
-    <div className="">
+    <>
       <HeroBanner />
 
       <BlackFridayBanner />
 
-      <div className="flex flex-col items-center justify-top bg-gray-100">
+      <div id="products" className="flex flex-col items-center justify-top bg-gray-100">
         <div className="wrapper">
           <ProductsView products={products} categories={categories} />
         </div>
       </div>
-    </div>
+    </>
   );
 }
