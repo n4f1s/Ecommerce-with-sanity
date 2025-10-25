@@ -3,11 +3,11 @@
 import Link from "next/link";
 import Form from "next/form";
 import { ListOrdered, ShoppingCart } from "lucide-react";
-import useBasketStore from "@/store/cart-store";
+import useCartStore from "@/store/cart-store";
 import useOrderStore from "@/store/order-store";
 
 const Header = () => {
-    const itemCount = useBasketStore((state) =>
+    const itemCount = useCartStore((state) =>
         state.items.reduce((total, item) => total + item.quantity, 0)
     );
     const orderCount = useOrderStore((state) => state.orders.length);
@@ -45,16 +45,16 @@ const Header = () => {
 
                 {/* Buttons */}
                 <div className="flex items-center space-x-4 mt-4 sm:mt-0 flex-1 sm:flex-none justify-center sm:justify-end">
-                    {/* Basket */}
+                    {/* Cart */}
                     <Link
-                        href="/basket"
+                        href="/cart"
                         className="relative flex items-center space-x-2 bg-theme-primary hover:bg-theme-secondary text-white font-bold py-2 px-4 rounded transition-all duration-300"
                     >
                         <ShoppingCart className="size-6" />
                         <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full size-5 flex items-center justify-center text-xs">
                             {itemCount}
                         </span>
-                        <span>My Basket</span>
+                        <span>My Cart</span>
                     </Link>
 
                     {/* Orders */}

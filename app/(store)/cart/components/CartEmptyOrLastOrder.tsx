@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 
-export default function BasketEmptyOrLastOrder() {
+export default function CartEmptyOrLastOrder() {
     const router = useRouter();
     const { getLastOrder } = useOrderStore();
     const lastOrder = getLastOrder();
@@ -75,11 +75,11 @@ export default function BasketEmptyOrLastOrder() {
         );
     }
 
-    // Empty basket fallback
+    // Empty cart fallback
     return (
         <div className="container mx-auto p-4 flex flex-col items-center justify-center min-h-[50vh]">
             <h1 className="text-2xl font-bold mb-4 text-gray-800">
-                Your basket is empty.
+                Your cart is empty.
             </h1>
             <p className="text-gray-600 text-lg mb-6">Add new product to order</p>
             <button

@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import useBasketStore from "@/store/cart-store";
+import useCartStore from "@/store/cart-store";
 
 
 interface CheckoutModalProps {
@@ -11,7 +11,7 @@ interface CheckoutModalProps {
 }
 
 const CheckoutModal = ({ isOpen, setIsOpen }: CheckoutModalProps) => {
-  const { getGroupedItems, getTotalPrice, clearBasket } = useBasketStore();
+  const { getGroupedItems, getTotalPrice, clearCart } = useCartStore();
   const [formData, setFormData] = useState({
     customerName: "",
     phoneNumber: "",
@@ -37,7 +37,7 @@ const CheckoutModal = ({ isOpen, setIsOpen }: CheckoutModalProps) => {
 
       if (res.ok) {
         setSuccess(true);
-        clearBasket();
+        clearCart();
       } else {
         alert("Failed to place order. Please try again.");
       }

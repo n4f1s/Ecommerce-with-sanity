@@ -1,19 +1,19 @@
 "use client"
 
-import AddToBasketButton from "@/components/product/AddToBasketQuantity";
+import AddToCartButton from "@/components/product/AddToCartQuantity";
 import Loader from "@/components/common/loader";
 import ShippingAddressForm from "@/components/ShippingAddressForm";
 import { urlFor } from "@/sanity/lib/image";
-import useBasketStore from "@/store/cart-store"
+import useCartStore from "@/store/cart-store"
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import BasketEmptyOrLastOrder from "./components/BasketEmptyOrLastOrder";
+import CartEmptyOrLastOrder from "./components/CartEmptyOrLastOrder";
 
 
-function BasketPage() {
-    const groupedItems = useBasketStore((state) => state.getGroupedItems());
-    const itemsTotal = useBasketStore.getState().getTotalPrice(); // total of items
+function CartPage() {
+    const groupedItems = useCartStore((state) => state.getGroupedItems());
+    const itemsTotal = useCartStore.getState().getTotalPrice(); // total of items
     const deliveryCharge = 120;
     const finalTotal = itemsTotal + deliveryCharge;
     const router = useRouter();
@@ -26,15 +26,15 @@ function BasketPage() {
 
     if (!isClient) return <Loader />
 
-    // Basket is empty or already made an order
+    // Cart is empty or already made an order
     if (groupedItems.length === 0) {
-        return <BasketEmptyOrLastOrder />;
+        return <CartEmptyOrLastOrder />;
     }
 
     return (
         <div className="wrapper">
             <h1 className="text-2xl font-bold mb-4">
-                Your Basket
+                Your Cart
             </h1>
             <div className="lg:grid lg:grid-cols-6 gap-8">
                 <div className="col-span-4">
@@ -70,7 +70,7 @@ function BasketPage() {
                             </div>
 
                             <div className="flex items-center ml-4 flex-shrink-0">
-                                <AddToBasketButton product={item.product} />
+                                <AddToCartButton product={item.product} />
                             </div>
                         </div>
                     ))}
@@ -117,4 +117,4 @@ function BasketPage() {
     )
 }
 
-export default BasketPage
+export default CartPage;

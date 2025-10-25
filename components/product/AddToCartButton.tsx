@@ -1,19 +1,19 @@
 "use client"
 
 import { Product } from '@/sanity.types';
-import useBasketStore from '@/store/cart-store';
+import useCartStore from '@/store/cart-store';
 import { Button } from '../ui/button';
 
 
 
-interface AddToBasketQuantityProps {
+interface AddToCartQuantityProps {
     product: Product;
     disabled?: boolean;
     className?: string;
 }
 
-function AddToBasketButton({ product, disabled, className }: AddToBasketQuantityProps) {
-    const { addItem } = useBasketStore();
+function AddToCartButton({ product, disabled, className }: AddToCartQuantityProps) {
+    const { addItem } = useCartStore();
 
     return (
         <Button disabled={disabled} className={`${className}`} onClick={() => addItem(product)}>
@@ -22,4 +22,4 @@ function AddToBasketButton({ product, disabled, className }: AddToBasketQuantity
     )
 }
 
-export default AddToBasketButton
+export default AddToCartButton;

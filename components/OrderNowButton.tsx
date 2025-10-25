@@ -3,7 +3,7 @@
 import { Product } from '@/sanity.types';
 import React from 'react'
 import { Button } from './ui/button';
-import useBasketStore from '@/store/cart-store';
+import useCartStore from '@/store/cart-store';
 
 
 interface OrderNowButtonProps {
@@ -13,7 +13,7 @@ interface OrderNowButtonProps {
 }
 
 function OrderNowButton({ product, disabled, className }: OrderNowButtonProps) {
-    const { addItem, getItemCount } = useBasketStore();
+    const { addItem, getItemCount } = useCartStore();
     const itemCount = getItemCount(product._id);
 
     const handleOrderNow = () => {
@@ -21,7 +21,7 @@ function OrderNowButton({ product, disabled, className }: OrderNowButtonProps) {
     };
 
     return (
-        <a href="/basket" onClick={handleOrderNow}>
+        <a href="/cart" onClick={handleOrderNow}>
             <Button
                 disabled={disabled}
                 className={className}

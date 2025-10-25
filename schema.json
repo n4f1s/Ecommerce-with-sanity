@@ -162,6 +162,20 @@
         },
         "optional": true
       },
+      "district": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "upazila": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        },
+        "optional": true
+      },
       "city": {
         "type": "objectAttribute",
         "value": {

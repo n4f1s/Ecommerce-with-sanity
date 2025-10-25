@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { BasketItem } from "./cart-store";
+import { CartItem } from "./cart-store";
 
 export interface Order {
   id: string; 
@@ -8,10 +8,12 @@ export interface Order {
   phoneNumber: string;
   address: string;
   division: string;
+  district: string;
+  upazila: string;
   city: string;
   postalCode: string;
   deliveryInstruction?: string;
-  items: BasketItem[];
+  items: CartItem[];
   totalPrice: number;
   paymentMethod: string;
   status: string;

@@ -40,6 +40,8 @@ export type Order = {
   email?: string;
   address?: string;
   division?: string;
+  district?: string;
+  upazila?: string;
   city?: string;
   postalCode?: string;
   deliveryInstruction?: string;
@@ -379,7 +381,7 @@ export type PRODUCT_BY_ID_QUERYResult = {
   stock?: number;
 } | null;
 
-// Source: ./sanity/lib/products/getProductsByCategory.tsx
+// Source: ./sanity/lib/products/getProductsByCategory.ts
 // Variable: PRODUCT_BY_CATEGORY_QUERY
 // Query: *[            _type == "product"             && references(*[_type == "category" && slug.current == $categorySlug]._id)        ] | order(name asc)
 export type PRODUCT_BY_CATEGORY_QUERYResult = Array<{

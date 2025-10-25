@@ -1,5 +1,5 @@
-import AddToBasketButton from "@/components/product/AddToBasketButton";
-import AddToBasketQuantity from "@/components/product/AddToBasketQuantity";
+import AddToCartButton from "@/components/product/AddToCartButton";
+import AddToCartQuantity from "@/components/product/AddToCartQuantity";
 import OrderNowButton from "@/components/OrderNowButton";
 import ProductDetailTabs from "@/components/product/ProductDetailTabs";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
@@ -96,7 +96,7 @@ async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
                             </div>
 
                             {/* <div className="mt-6 flex flex-wrap items-center justify-center gap-5">
-                            <AddToBasketQuantity product={product} disabled={isOutOfStock} />
+                            <AddToCartQuantity product={product} disabled={isOutOfStock} />
 
                             <CheckoutButtonWithModal isOutOfStock={isOutOfStock} />
                         </div> */}
@@ -121,11 +121,11 @@ async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
                             <p className="text-lg font-semibold">
                                 Quantity
                             </p>
-                            <AddToBasketQuantity product={product} disabled={isOutOfStock} />
+                            <AddToCartQuantity product={product} disabled={isOutOfStock} />
                         </div>
 
                         <div className="flex flex-wrap gap-4">
-                            <AddToBasketButton product={product} disabled={isOutOfStock} className="bg-white border border-black/40 text-black hover:text-white" />
+                            <AddToCartButton product={product} disabled={isOutOfStock} className="bg-white border border-black/40 text-black hover:text-white" />
 
                             <OrderNowButton product={product} disabled={isOutOfStock} />
                         </div>
