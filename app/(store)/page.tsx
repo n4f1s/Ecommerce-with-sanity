@@ -1,6 +1,7 @@
-import HeroBanner from "@/components/HeroBanner";
-import BlackFridayBanner from "@/components/BlackFridayBanner";
-import ProductsSection from "@/components/ProductsSection"; 
+import HeroBanner from "@/components/common/HeroBanner";
+import BlackFridayBanner from "@/components/common/BlackFridayBanner";
+import ProductsSection from "@/components/common/ProductsSection";
+
 
 export const dynamic = "force-static";
 export const revalidate = 60; // Check for updates after 60 sec

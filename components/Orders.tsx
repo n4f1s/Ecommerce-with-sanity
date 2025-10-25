@@ -1,6 +1,6 @@
 "use client";
 
-import useOrderStore from "@/store/orderStore";
+import useOrderStore from "@/store/order-store";
 
 
 

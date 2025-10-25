@@ -1,5 +1,5 @@
 import { client } from "@/sanity/lib/client";
-import useOrderStore from "@/store/orderStore";
+import useOrderStore from "@/store/order-store";
 import type { SanityDocument } from "@sanity/client";
 
 export function subscribeToOrderStatusChanges() {

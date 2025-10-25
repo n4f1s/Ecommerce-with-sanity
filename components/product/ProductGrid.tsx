@@ -2,7 +2,7 @@
 
 import { Product } from "@/sanity.types";
 import { AnimatePresence, motion } from "framer-motion";
-import ProductThumb from "./ProductThump";
+import ProductThumb from "./ProductCard";
 
 interface ProductGridProps {
     products: Product[];

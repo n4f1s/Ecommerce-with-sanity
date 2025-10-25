@@ -1,7 +1,7 @@
 import { TagIcon } from 'lucide-react'
 import { defineField, defineType } from 'sanity'
 
-export const salesType = defineType({
+export const sale = defineType({
   name: 'sale',
   title: 'Sale',
   type: 'document',

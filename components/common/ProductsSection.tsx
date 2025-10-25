@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import ProductsView from "./ProductsView";
 import { getAllProducts } from "@/sanity/lib/products/getAllProducts";
 import { getAllCategories } from "@/sanity/lib/products/getAllCategories";
 import Loader from "./loader";
+import ProductsView from "../product/ProductsView";
 
 export default async function ProductsSection() {
   return (

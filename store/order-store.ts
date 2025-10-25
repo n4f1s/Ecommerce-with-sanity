@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { BasketItem } from "./store";
+import { BasketItem } from "./cart-store";
 
 export interface Order {
   id: string; 

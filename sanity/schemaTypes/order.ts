@@ -2,7 +2,7 @@ import { ShoppingBasket } from "lucide-react";
 import { defineArrayMember, defineField, defineType } from "sanity";
 
 
-export const orderType = defineType({
+export const order = defineType({
   name: "order",
   title: "Order",
   type: "document",

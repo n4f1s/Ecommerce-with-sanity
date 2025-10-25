@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import useBasketStore from "@/store/store";
+import useBasketStore from "@/store/cart-store";
 import toast from "react-hot-toast";
-import useOrderStore from "@/store/orderStore";
+import useOrderStore from "@/store/order-store";
 
 interface ShippingAddressFormProps {
   onSuccess?: () => void;
@@ -77,7 +77,7 @@ export default function ShippingAddressForm({ onSuccess }: ShippingAddressFormPr
           items: getGroupedItems(),
           totalPrice: getTotalPrice() + DELIVERY_CHARGE,
           paymentMethod: "Cash on Delivery",
-          status: "pending",
+          status: data.status,
           orderDate: formatDate(new Date()),
         });
 

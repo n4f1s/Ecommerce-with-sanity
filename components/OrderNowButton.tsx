@@ -3,7 +3,7 @@
 import { Product } from '@/sanity.types';
 import React from 'react'
 import { Button } from './ui/button';
-import useBasketStore from '@/store/store';
+import useBasketStore from '@/store/cart-store';
 
 
 interface OrderNowButtonProps {

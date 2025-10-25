@@ -1,10 +1,10 @@
 "use client"
 
-import AddToBasketButton from "@/components/AddToBasketQuantity";
-import Loader from "@/components/loader";
+import AddToBasketButton from "@/components/product/AddToBasketQuantity";
+import Loader from "@/components/common/loader";
 import ShippingAddressForm from "@/components/ShippingAddressForm";
 import { urlFor } from "@/sanity/lib/image";
-import useBasketStore from "@/store/store"
+import useBasketStore from "@/store/cart-store"
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";

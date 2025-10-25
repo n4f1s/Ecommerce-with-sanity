@@ -4,9 +4,9 @@ import { Product } from "@/sanity.types";
 import { urlFor } from "@/sanity/lib/image";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "./ui/button";
-import useBasketStore from "@/store/store";
+import useBasketStore from "@/store/cart-store";
 import { ShoppingCart } from "lucide-react";
+import { Button } from "../ui/button";
 
 type SanityChild = {
     _type: "span";

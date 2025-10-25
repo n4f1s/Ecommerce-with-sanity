@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { urlFor } from "@/sanity/lib/image";
-import AddToBasketButton from "@/components/AddToBasketQuantity";
+import AddToBasketButton from "@/components/product/AddToBasketQuantity";
 import { useRouter } from "next/navigation";
 import { Product } from "@/sanity.types";
 

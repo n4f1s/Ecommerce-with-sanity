@@ -3,11 +3,13 @@
 import { Category } from "@/sanity.types"
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover";
-import { Button } from "./button";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "../ui/command";
 import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
+
+
 
 
 interface CategorySelectorProps {

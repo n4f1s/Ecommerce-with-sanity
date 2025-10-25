@@ -1,8 +1,8 @@
-import AddToBasketButton from "@/components/AddToBasketButton";
-import AddToBasketQuantity from "@/components/AddToBasketQuantity";
+import AddToBasketButton from "@/components/product/AddToBasketButton";
+import AddToBasketQuantity from "@/components/product/AddToBasketQuantity";
 import OrderNowButton from "@/components/OrderNowButton";
-import ProductDetailTabs from "@/components/ProductDetailTabs";
-import ProductImageGallery from "@/components/ProductImageGallery";
+import ProductDetailTabs from "@/components/product/ProductDetailTabs";
+import ProductImageGallery from "@/components/product/ProductImageGallery";
 import { urlFor } from "@/sanity/lib/image";
 import { getProductBySlug } from "@/sanity/lib/products/getProductBySlug";
 import { CreditCard, LifeBuoy, Truck } from "lucide-react";

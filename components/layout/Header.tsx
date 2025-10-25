@@ -3,8 +3,8 @@
 import Link from "next/link";
 import Form from "next/form";
 import { ListOrdered, ShoppingCart } from "lucide-react";
-import useBasketStore from "@/store/store";
-import useOrderStore from "@/store/orderStore";
+import useBasketStore from "@/store/cart-store";
+import useOrderStore from "@/store/order-store";
 
 const Header = () => {
     const itemCount = useBasketStore((state) =>
@@ -59,7 +59,7 @@ const Header = () => {
 
                     {/* Orders */}
                     <Link
-                        href="/order"
+                        href="/orders"
                         className="relative flex items-center space-x-2 border border-gray-600 hover:bg-theme-secondary text-gray-800 hover:text-white font-bold py-2 px-4 rounded transition-all duration-300"
                     >
                         <ListOrdered className="size-6" />

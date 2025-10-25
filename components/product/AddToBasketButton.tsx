@@ -1,8 +1,8 @@
 "use client"
 
 import { Product } from '@/sanity.types';
-import useBasketStore from '@/store/store';
-import { Button } from './ui/button';
+import useBasketStore from '@/store/cart-store';
+import { Button } from '../ui/button';
 
 
 

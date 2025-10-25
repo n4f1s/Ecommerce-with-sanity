@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { SanityLive } from "@/sanity/lib/live";
 import "./globals.css";
 import ToastProvider from "@/providers/ToastProvider";
-import ScrollToTop from "@/components/ScrollToTop";
+import ScrollToTop from "@/components/layout/ScrollToTop";
 
 export const metadata: Metadata = {
   title: "E-commerce",

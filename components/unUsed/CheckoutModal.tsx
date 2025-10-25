@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import useBasketStore from "@/store/store";
+import useBasketStore from "@/store/cart-store";
 
 
 interface CheckoutModalProps {

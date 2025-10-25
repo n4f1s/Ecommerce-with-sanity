@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import useOrderStore from "@/store/orderStore";
+import useOrderStore from "@/store/order-store";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 

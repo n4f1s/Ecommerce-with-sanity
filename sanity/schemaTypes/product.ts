@@ -1,7 +1,7 @@
 import { ShoppingCart } from 'lucide-react'
 import { defineField, defineType } from 'sanity'
 
-export const productType = defineType({
+export const product = defineType({
   name: 'product',
   title: 'Products',
   type: 'document',

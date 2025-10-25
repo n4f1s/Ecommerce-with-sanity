@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import CheckoutModal from "@/components/CheckoutModal";
+import CheckoutModal from "@/components/unUsed/CheckoutModal";
 
 
 interface CheckoutButtonWithModalProps {

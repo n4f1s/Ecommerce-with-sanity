@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { backendClient } from "@/sanity/lib/backendClient";
+import { backendClient } from "@/sanity/lib/backend-client";
 import crypto from "crypto";
 import { Order } from "@/sanity.types";
 

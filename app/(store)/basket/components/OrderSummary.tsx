@@ -1,6 +1,6 @@
 "use client";
 
-import useBasketStore from "@/store/store";
+import useBasketStore from "@/store/cart-store";
 
 export default function OrderSummary() {
     const totalItems = useBasketStore((s) =>
