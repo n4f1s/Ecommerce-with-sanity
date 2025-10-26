@@ -1,4 +1,3 @@
-// components/ShippingAddressForm.tsx
 "use client";
 
 import { useState } from "react";
@@ -101,7 +100,7 @@ export default function ShippingAddressForm({
     setIsSubmitting(true);
 
     try {
-      const res = await fetch("/api/create-order", {
+      const res = await fetch("/api/orders/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -111,7 +110,7 @@ export default function ShippingAddressForm({
           division: formData.divisionName,
           district: formData.districtName,
           upazila: formData.upazilaName,
-          city: formData.city, // ✅ Send city to API
+          city: formData.city,
           postalCode: formData.postalCode,
           deliveryInstruction: formData.deliveryInstruction,
           items: getGroupedItems(),
@@ -136,7 +135,7 @@ export default function ShippingAddressForm({
           items: getGroupedItems(),
           totalPrice: getTotalPrice() + DELIVERY_CHARGE,
           paymentMethod: "Cash on Delivery",
-          status: data.status,
+          status: "pending",
           orderDate: formatDate(new Date()),
         });
 

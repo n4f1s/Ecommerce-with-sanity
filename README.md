@@ -35,3 +35,135 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+
+```
+ecommerce-with-sanity
+├─ app
+│  ├─ (store)
+│  │  ├─ cart
+│  │  │  ├─ components
+│  │  │  │  └─ CartEmptyOrLastOrder.tsx
+│  │  │  ├─ loading.tsx
+│  │  │  └─ page.tsx
+│  │  ├─ categories
+│  │  │  └─ [slug]
+│  │  │     ├─ loading.tsx
+│  │  │     └─ page.tsx
+│  │  ├─ error.tsx
+│  │  ├─ layout.tsx
+│  │  ├─ loading.tsx
+│  │  ├─ orders
+│  │  │  └─ page.tsx
+│  │  ├─ page.tsx
+│  │  ├─ product
+│  │  │  └─ [slug]
+│  │  │     ├─ error.tsx
+│  │  │     ├─ loading.tsx
+│  │  │     └─ page.tsx
+│  │  └─ search
+│  │     ├─ loading.tsx
+│  │     └─ page.tsx
+│  ├─ api
+│  │  └─ create-order
+│  │     └─ route.ts
+│  ├─ error.tsx
+│  ├─ favicon.ico
+│  ├─ globals.css
+│  ├─ layout.tsx
+│  ├─ not-found.tsx
+│  └─ studio
+│     ├─ layout.tsx
+│     └─ [[...tool]]
+│        └─ page.tsx
+├─ components
+│  ├─ common
+│  │  ├─ BlackFridayBanner.tsx
+│  │  ├─ category-selector.tsx
+│  │  ├─ HeroBanner.tsx
+│  │  ├─ loader.tsx
+│  │  └─ ProductsSection.tsx
+│  ├─ layout
+│  │  ├─ Footer.tsx
+│  │  ├─ Header.tsx
+│  │  └─ ScrollToTop.tsx
+│  ├─ OrderNowButton.tsx
+│  ├─ Orders.tsx
+│  ├─ product
+│  │  ├─ AddToCartButton.tsx
+│  │  ├─ AddToCartQuantity.tsx
+│  │  ├─ ProductCard.tsx
+│  │  ├─ ProductDetailTabs.tsx
+│  │  ├─ ProductGrid.tsx
+│  │  ├─ ProductImageGallery.tsx
+│  │  └─ ProductsView.tsx
+│  ├─ ShippingAddressForm.tsx
+│  ├─ ui
+│  │  ├─ button.tsx
+│  │  ├─ command.tsx
+│  │  ├─ dialog.tsx
+│  │  └─ popover.tsx
+│  └─ unUsed
+│     ├─ CheckoutButtonWithModal.tsx
+│     └─ CheckoutModal.tsx
+├─ components.json
+├─ data
+│  └─ locations.json
+├─ eslint.config.mjs
+├─ hooks
+│  └─ useLocations.ts
+├─ lib
+│  ├─ constant.ts
+│  ├─ types
+│  │  └─ locations.ts
+│  ├─ utils.ts
+│  └─ validation.ts
+├─ next.config.ts
+├─ package.json
+├─ pnpm-lock.yaml
+├─ pnpm-workspace.yaml
+├─ postcss.config.mjs
+├─ providers
+│  └─ ToastProvider.tsx
+├─ public
+│  ├─ heroBanner.webp
+│  └─ notFound.png
+├─ README.md
+├─ sanity
+│  ├─ env.ts
+│  ├─ lib
+│  │  ├─ backend-client.ts
+│  │  ├─ client.ts
+│  │  ├─ image.ts
+│  │  ├─ live.ts
+│  │  ├─ orders
+│  │  │  └─ orders.ts
+│  │  ├─ products
+│  │  │  ├─ getAllCategories.ts
+│  │  │  ├─ getAllProducts.ts
+│  │  │  ├─ getProductBySlug.ts
+│  │  │  ├─ getProductsByCategory.ts
+│  │  │  └─ searchProductsByName.ts
+│  │  └─ sales
+│  │     ├─ couponCodes.ts
+│  │     └─ getActiveSaleByCouponCode.ts
+│  ├─ schemaTypes
+│  │  ├─ blockContent.ts
+│  │  ├─ category.ts
+│  │  ├─ index.ts
+│  │  ├─ order.ts
+│  │  ├─ product.ts
+│  │  └─ sale.ts
+│  └─ structure.ts
+├─ sanity.cli.ts
+├─ sanity.config.ts
+├─ sanity.types.ts
+├─ schema.json
+├─ scripts
+│  ├─ fetch-bd-locations.js
+│  └─ verify-connections.js
+├─ store
+│  ├─ cart-store.ts
+│  └─ order-store.ts
+└─ tsconfig.json
+
+```

@@ -2,7 +2,7 @@
 
 import { Product } from '@/sanity.types';
 import React from 'react'
-import { Button } from './ui/button';
+import { Button } from '../ui/button';
 import useCartStore from '@/store/cart-store';
 
 

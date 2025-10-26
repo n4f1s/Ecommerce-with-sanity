@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { CartItem } from "./cart-store";
 
 export interface Order {
-  id: string; 
+  id: string;
   customerName: string;
   phoneNumber: string;
   address: string;
@@ -26,6 +26,7 @@ interface OrderState {
   updateOrderStatus: (id: string, newStatus: string) => void;
   clearOrders: () => void;
   getLastOrder: () => Order | null;
+  getOrderIds: () => string[]; 
 }
 
 const useOrderStore = create<OrderState>()(
@@ -50,6 +51,11 @@ const useOrderStore = create<OrderState>()(
       getLastOrder: () => {
         const { orders } = get();
         return orders.length > 0 ? orders[orders.length - 1] : null;
+      },
+
+      // NEW: Get array of order IDs for syncing
+      getOrderIds: () => {
+        return get().orders.map(order => order.id);
       },
     }),
     { name: "order-store" }

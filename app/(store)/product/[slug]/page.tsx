@@ -1,6 +1,6 @@
 import AddToCartButton from "@/components/product/AddToCartButton";
 import AddToCartQuantity from "@/components/product/AddToCartQuantity";
-import OrderNowButton from "@/components/OrderNowButton";
+import OrderNowButton from "@/components/order/OrderNowButton";
 import ProductDetailTabs from "@/components/product/ProductDetailTabs";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
 import { urlFor } from "@/sanity/lib/image";
@@ -94,12 +94,6 @@ async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
                                     )}
                                 </div>
                             </div>
-
-                            {/* <div className="mt-6 flex flex-wrap items-center justify-center gap-5">
-                            <AddToCartQuantity product={product} disabled={isOutOfStock} />
-
-                            <CheckoutButtonWithModal isOutOfStock={isOutOfStock} />
-                        </div> */}
                         </div>
                     </div>
 
@@ -154,12 +148,6 @@ async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
 
                 {/* Tabs Component */}
                 <ProductDetailTabs product={product} />
-
-                {/* <div className="prose max-w-none mt-10">
-                {Array.isArray(product.description) && (
-                    <PortableText value={product.description} components={components} />
-                )}
-            </div> */}
             </div>
         </>
     )

@@ -1,15 +1,19 @@
-// lib/hooks/use-bd-locations.ts
+// hooks/useLocations.ts
 import { useMemo } from 'react';
 import locationsData from '@/data/locations.json';
-import type { BDLocations } from '@/lib/types/locations';
+import type { Division, District, Upazila } from '@/lib/types/locations';
 
-const locations = locationsData as BDLocations;
+interface LocationData {
+  divisions: Division[];
+  districts: District[];
+  upazilas: Upazila[];
+}
+
+const locations = locationsData as LocationData;
 
 export function useBDLocations(divisionId?: string, districtId?: string) {
-  // Get all divisions (always available)
   const divisions = locations.divisions;
 
-  // Get districts filtered by selected division
   const districts = useMemo(() => {
     if (!divisionId) return [];
     return locations.districts.filter(
@@ -17,7 +21,6 @@ export function useBDLocations(divisionId?: string, districtId?: string) {
     );
   }, [divisionId]);
 
-  // Get upazilas filtered by selected district
   const upazilas = useMemo(() => {
     if (!districtId) return [];
     return locations.upazilas.filter(
@@ -25,9 +28,7 @@ export function useBDLocations(divisionId?: string, districtId?: string) {
     );
   }, [districtId]);
 
-  return {
-    divisions,
-    districts,
-    upazilas,
-  };
+  return { divisions, districts, upazilas };
 }
+
+export type { Division, District, Upazila };

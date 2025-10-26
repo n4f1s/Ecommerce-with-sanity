@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typegen": "sanity schema extract --path=./schema.json && sanity typegen generate --path=./schema.json --output=./sanity.types.ts"
+    "typegen": "sanity schema extract --path=./schema.json && sanity typegen generate --path=./schema.json --output=./sanity.types.ts",
+    "generate-locations": "node scripts/generate-locations.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

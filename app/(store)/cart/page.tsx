@@ -1,14 +1,14 @@
 "use client"
 
 import AddToCartButton from "@/components/product/AddToCartQuantity";
-import Loader from "@/components/common/loader";
-import ShippingAddressForm from "@/components/ShippingAddressForm";
+import ShippingAddressForm from "@/components/order/ShippingAddressForm";
 import { urlFor } from "@/sanity/lib/image";
 import useCartStore from "@/store/cart-store"
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import CartEmptyOrLastOrder from "./components/CartEmptyOrLastOrder";
+import Loading from "./loading";
 
 
 function CartPage() {
@@ -24,7 +24,7 @@ function CartPage() {
         setIsClient(true);
     }, []);
 
-    if (!isClient) return <Loader />
+    if (!isClient) return <Loading />
 
     // Cart is empty or already made an order
     if (groupedItems.length === 0) {
