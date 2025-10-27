@@ -19,6 +19,7 @@ export const createOrderSchema = z.object({
   deliveryInstruction: z.string().trim().max(500).optional(),
   items: z.array(orderItemSchema).min(1),
   totalPrice: z.coerce.number().positive().max(10_000_000),
+  deliveryCharge: z.number().nonnegative(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

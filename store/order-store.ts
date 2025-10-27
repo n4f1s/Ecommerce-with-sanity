@@ -11,6 +11,7 @@ export interface Order {
   district: string;
   upazila: string;
   city: string;
+  deliveryCharge: number;
   postalCode: string;
   deliveryInstruction?: string;
   items: CartItem[];

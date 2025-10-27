@@ -72,6 +72,14 @@ export const product = defineType({
       of: [{ type: 'reference', to: [{ type: 'category' }] }]
     }),
     defineField({
+      name: 'featured',
+      title: 'Featured',
+      type: 'boolean',
+      description: 'Show on homepage featured section',
+      initialValue: false,
+      options: { layout: 'checkbox' }
+    }),
+    defineField({
       name: 'stock',
       title: 'Stock',
       type: 'number',

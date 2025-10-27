@@ -174,11 +174,11 @@ export default function CartEmptyOrLastOrder() {
               <div className="mt-6 space-y-2 border-t pt-4">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>Tk {(lastOrder.totalPrice - 120)}</span>
+                  <span>Tk {(lastOrder.totalPrice - lastOrder.deliveryCharge)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Delivery Charge</span>
-                  <span>Tk 120.00</span>
+                  <span>Tk {lastOrder.deliveryCharge}</span>
                 </div>
                 <div className="flex justify-between text-xl font-bold text-gray-800 pt-2 border-t-2 border-gray-300">
                   <span>Total</span>

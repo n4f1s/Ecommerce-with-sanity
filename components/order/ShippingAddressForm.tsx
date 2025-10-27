@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useCartStore from "@/store/cart-store";
 import useOrderStore from "@/store/order-store";
 import toast from "react-hot-toast";
@@ -8,6 +8,7 @@ import { useBDLocations } from "@/hooks/useLocations";
 
 interface ShippingAddressFormProps {
   onSuccess?: () => void;
+  onChargeChange?: (charge: number) => void;
 }
 
 const formatDate = (date: Date) => {
@@ -26,6 +27,7 @@ const formatDate = (date: Date) => {
 
 export default function ShippingAddressForm({
   onSuccess,
+  onChargeChange,
 }: ShippingAddressFormProps) {
   const { getGroupedItems, getTotalPrice, clearCart } = useCartStore();
   const { addOrder } = useOrderStore();
@@ -52,7 +54,18 @@ export default function ShippingAddressForm({
     formData.districtId
   );
 
-  const DELIVERY_CHARGE = 120;
+  // Compute delivery charge by division name
+  const deliveryCharge = useMemo(() => {
+    const name = (formData.divisionName || "").trim().toLowerCase();
+    // Match both Bangla and English spellings if needed
+    const isDhaka = name === "dhaka";
+    return isDhaka ? 80 : 120;
+  }, [formData.divisionName]);
+
+  // Inform parent whenever charge changes
+  useEffect(() => {
+    onChargeChange?.(deliveryCharge);
+  }, [deliveryCharge, onChargeChange]);
 
   // ✅ Handle division change
   const handleDivisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -95,66 +108,6 @@ export default function ShippingAddressForm({
     });
   };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setIsSubmitting(true);
-
-  //   try {
-  //     const res = await fetch("/api/orders/create-order", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         customerName: formData.customerName,
-  //         phoneNumber: formData.phoneNumber,
-  //         address: formData.address,
-  //         division: formData.divisionName,
-  //         district: formData.districtName,
-  //         upazila: formData.upazilaName,
-  //         city: formData.city,
-  //         postalCode: formData.postalCode,
-  //         deliveryInstruction: formData.deliveryInstruction,
-  //         items: getGroupedItems(),
-  //         totalPrice: getTotalPrice() + DELIVERY_CHARGE,
-  //       }),
-  //     });
-
-  //     if (res.ok) {
-  //       const data = await res.json();
-
-  //       addOrder({
-  //         id: data.orderNumber,
-  //         customerName: formData.customerName,
-  //         phoneNumber: formData.phoneNumber,
-  //         address: formData.address,
-  //         division: formData.divisionName,
-  //         district: formData.districtName,
-  //         upazila: formData.upazilaName,
-  //         city: formData.city, // ✅ Save city to order store
-  //         postalCode: formData.postalCode,
-  //         deliveryInstruction: formData.deliveryInstruction,
-  //         items: getGroupedItems(),
-  //         totalPrice: getTotalPrice() + DELIVERY_CHARGE,
-  //         paymentMethod: "Cash on Delivery",
-  //         status: "pending",
-  //         orderDate: formatDate(new Date()),
-  //       });
-
-  //       clearCart();
-  //       toast.success(
-  //         "🎉 অর্ডার সফল হয়েছে! ডেলিভারির জন্য আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।"
-  //       );
-  //       onSuccess?.();
-  //     } else {
-  //       toast.error("অর্ডার দেওয়া যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।");
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //     toast.error("কিছু ভুল হয়েছে!");
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -174,7 +127,8 @@ export default function ShippingAddressForm({
           postalCode: formData.postalCode,
           deliveryInstruction: formData.deliveryInstruction,
           items: getGroupedItems(),
-          totalPrice: getTotalPrice() + DELIVERY_CHARGE,
+          deliveryCharge: deliveryCharge,
+          totalPrice: getTotalPrice() + deliveryCharge,
         }),
       });
 
@@ -210,6 +164,7 @@ export default function ShippingAddressForm({
         id: data.orderNumber,
         customerName: formData.customerName,
         phoneNumber: formData.phoneNumber,
+        deliveryCharge: deliveryCharge,
         address: formData.address,
         division: formData.divisionName,
         district: formData.districtName,
@@ -218,7 +173,7 @@ export default function ShippingAddressForm({
         postalCode: formData.postalCode,
         deliveryInstruction: formData.deliveryInstruction,
         items: getGroupedItems(),
-        totalPrice: getTotalPrice() + DELIVERY_CHARGE,
+        totalPrice: getTotalPrice() + deliveryCharge,
         paymentMethod: "Cash on Delivery",
         status: "pending",
         orderDate: formatDate(new Date()),
@@ -237,7 +192,7 @@ export default function ShippingAddressForm({
     }
   };
 
-  
+
   return (
     <form
       onSubmit={handleSubmit}

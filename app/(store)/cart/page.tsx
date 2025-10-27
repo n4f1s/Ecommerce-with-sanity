@@ -6,16 +6,17 @@ import { urlFor } from "@/sanity/lib/image";
 import useCartStore from "@/store/cart-store"
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CartEmptyOrLastOrder from "./components/CartEmptyOrLastOrder";
 import Loading from "./loading";
 
 
 function CartPage() {
     const groupedItems = useCartStore((state) => state.getGroupedItems());
-    const itemsTotal = useCartStore.getState().getTotalPrice(); // total of items
-    const deliveryCharge = 120;
-    const finalTotal = itemsTotal + deliveryCharge;
+    const itemsTotal = useCartStore.getState().getTotalPrice();
+    const [deliveryCharge, setDeliveryCharge] = useState<number>(120); // default outer Dhaka
+    const finalTotal = useMemo(() => itemsTotal + deliveryCharge, [itemsTotal, deliveryCharge]);
+    // const finalTotal = itemsTotal + deliveryCharge;
     const router = useRouter();
 
     const [isClient, setIsClient] = useState(false);
@@ -66,7 +67,7 @@ function CartPage() {
                                     </h2>
                                     <p className="text-sm sm:text-base">
                                         Price: Tk {" "}
-                                        {(item.product.price ?? 0).toFixed(0)}
+                                        {(item.product.price ?? 0)}
                                     </p>
                                 </div>
                             </div>
@@ -92,12 +93,12 @@ function CartPage() {
                         <p className="flex justify-between">
                             <span>Delivery charge</span>
                             <span>
-                                Tk 120
+                                Tk {deliveryCharge}
                             </span>
                         </p>
                         <p className="flex justify-between text-xl font-bold border-t pt-2">
                             <span>Total</span>
-                            {/* Added 120 for Delivery charge */}
+                            {/* Added Delivery charge */}
                             <span>
                                 Tk {finalTotal}
                             </span>
@@ -113,7 +114,7 @@ function CartPage() {
 
                 <div className="w-full bg-gray-400 h-[1px] my-6" />
 
-                <ShippingAddressForm />
+                <ShippingAddressForm onChargeChange={setDeliveryCharge} />
             </div>
         </div>
     )

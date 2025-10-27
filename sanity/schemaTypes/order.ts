@@ -115,6 +115,12 @@ export const order = defineType({
       ]
     }),
     defineField({
+      name: 'deliveryCharge',
+      title: 'Delivery Charge',
+      type: 'number',
+      validation: Rule => Rule.required().min(0)
+    }),
+    defineField({
       name: 'totalPrice',
       title: 'Total Price (৳)',
       type: 'number',

@@ -6,7 +6,6 @@ import OrderStatusStepper from "./OrderStatusStepper";
 import { useOrderStatusSync } from "@/hooks/hooks/useOrderStatusSync";
 import Link from "next/link";
 
-const DELIVERY_CHARGE = 120;
 
 const Orders = () => {
   // Enable status sync (checks every 30 seconds)
@@ -38,7 +37,7 @@ const Orders = () => {
     <div className="space-y-6">
       {[...orders].reverse().map((order) => {
         // Calculate subtotal (total - delivery charge)
-        const subtotal = order.totalPrice - DELIVERY_CHARGE;
+        const subtotal = order.totalPrice - order.deliveryCharge;
 
         return (
           <div
@@ -190,7 +189,7 @@ const Orders = () => {
                       <Truck className="w-4 h-4 text-theme-primary" />
                       Delivery Charge
                     </span>
-                    <span className="font-semibold">Tk {DELIVERY_CHARGE}</span>
+                    <span className="font-semibold">Tk {order.deliveryCharge}</span>
                   </div>
 
                   {/* Divider */}

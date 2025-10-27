@@ -55,6 +55,7 @@ export type Order = {
     quantity?: number;
     _key: string;
   }>;
+  deliveryCharge?: number;
   totalPrice?: number;
   paymentMethod?: string;
   status?: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
@@ -146,6 +147,7 @@ export type Product = {
     _key: string;
     [internalGroqTypeReferenceTo]?: "category";
   }>;
+  featured?: boolean;
   stock?: number;
 };
 
@@ -329,6 +331,7 @@ export type ALL_PRODUCTS_QUERYResult = Array<{
     _key: string;
     [internalGroqTypeReferenceTo]?: "category";
   }>;
+  featured?: boolean;
   stock?: number;
 }>;
 
@@ -378,6 +381,7 @@ export type PRODUCT_BY_ID_QUERYResult = {
     _key: string;
     [internalGroqTypeReferenceTo]?: "category";
   }>;
+  featured?: boolean;
   stock?: number;
 } | null;
 
@@ -427,6 +431,7 @@ export type PRODUCT_BY_CATEGORY_QUERYResult = Array<{
     _key: string;
     [internalGroqTypeReferenceTo]?: "category";
   }>;
+  featured?: boolean;
   stock?: number;
 }>;
 
@@ -476,6 +481,7 @@ export type PRODUCT_SEARCH_QUERYResult = Array<{
     _key: string;
     [internalGroqTypeReferenceTo]?: "category";
   }>;
+  featured?: boolean;
   stock?: number;
 }>;
 

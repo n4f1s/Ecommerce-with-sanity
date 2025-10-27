@@ -257,6 +257,13 @@
         },
         "optional": true
       },
+      "deliveryCharge": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "number"
+        },
+        "optional": true
+      },
       "totalPrice": {
         "type": "objectAttribute",
         "value": {
@@ -894,6 +901,13 @@
               }
             }
           }
+        },
+        "optional": true
+      },
+      "featured": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "boolean"
         },
         "optional": true
       },
