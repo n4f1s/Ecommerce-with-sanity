@@ -55,6 +55,7 @@ export default function ProductImageGallery({
                                     src={img ? urlFor(img).width(800).format("webp").url() : ""}
                                     alt={product.name || `Product image ${i + 1}`}
                                     fill
+                                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 340px"
                                     className="object-contain bg-white"
                                     priority={i === 0}
                                 />
@@ -92,10 +93,11 @@ export default function ProductImageGallery({
                             >
                                 <Image
                                     src={
-                                        img ? urlFor(img).width(150).format("webp").url() : ""
+                                        img ? urlFor(img).width(200).format("webp").url() : ""
                                     }
                                     alt={`Thumbnail ${i + 1}`}
                                     fill
+                                    sizes="80px"
                                     className="object-cover bg-white"
                                 />
                             </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 
 export default function NotFound() {
@@ -29,12 +30,16 @@ export default function NotFound() {
         </div>
 
         <div className="mt-10">
-          <img
-            src="/notFound.png"
-            alt="Page not found illustration"
-            className="w-full max-w-[400px] mx-auto opacity-90"
-            loading="lazy"
-          />
+          <div className="relative mx-auto w-full max-w-[400px] aspect-[4/3]">
+            <Image
+              src="/notFound.png"
+              alt="Page not found illustration"
+              fill
+              sizes="(max-width: 640px) 90vw, 400px"
+              className="opacity-90 object-contain"
+              priority={false}
+            />
+          </div>
         </div>
       </div>
     </section>

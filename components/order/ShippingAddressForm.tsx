@@ -40,7 +40,7 @@ export default function ShippingAddressForm({
     districtName: "",
     upazilaId: "",
     upazilaName: "",
-    city: "", // ✅ Added city field
+    city: "",
     postalCode: "",
     deliveryInstruction: "",
   });
@@ -57,7 +57,7 @@ export default function ShippingAddressForm({
   // ✅ Handle division change
   const handleDivisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedDivision = divisions.find((div) => div.id === e.target.value);
-    
+
     setFormData({
       ...formData,
       divisionId: e.target.value,
@@ -73,7 +73,7 @@ export default function ShippingAddressForm({
   // ✅ Handle district change
   const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedDistrict = districts.find((dist) => dist.id === e.target.value);
-    
+
     setFormData({
       ...formData,
       districtId: e.target.value,
@@ -87,13 +87,73 @@ export default function ShippingAddressForm({
   // ✅ Handle upazila change
   const handleUpazilaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedUpazila = upazilas.find((upa) => upa.id === e.target.value);
-    
+
     setFormData({
       ...formData,
       upazilaId: e.target.value,
       upazilaName: selectedUpazila?.name || "",
     });
   };
+
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setIsSubmitting(true);
+
+  //   try {
+  //     const res = await fetch("/api/orders/create-order", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         customerName: formData.customerName,
+  //         phoneNumber: formData.phoneNumber,
+  //         address: formData.address,
+  //         division: formData.divisionName,
+  //         district: formData.districtName,
+  //         upazila: formData.upazilaName,
+  //         city: formData.city,
+  //         postalCode: formData.postalCode,
+  //         deliveryInstruction: formData.deliveryInstruction,
+  //         items: getGroupedItems(),
+  //         totalPrice: getTotalPrice() + DELIVERY_CHARGE,
+  //       }),
+  //     });
+
+  //     if (res.ok) {
+  //       const data = await res.json();
+
+  //       addOrder({
+  //         id: data.orderNumber,
+  //         customerName: formData.customerName,
+  //         phoneNumber: formData.phoneNumber,
+  //         address: formData.address,
+  //         division: formData.divisionName,
+  //         district: formData.districtName,
+  //         upazila: formData.upazilaName,
+  //         city: formData.city, // ✅ Save city to order store
+  //         postalCode: formData.postalCode,
+  //         deliveryInstruction: formData.deliveryInstruction,
+  //         items: getGroupedItems(),
+  //         totalPrice: getTotalPrice() + DELIVERY_CHARGE,
+  //         paymentMethod: "Cash on Delivery",
+  //         status: "pending",
+  //         orderDate: formatDate(new Date()),
+  //       });
+
+  //       clearCart();
+  //       toast.success(
+  //         "🎉 অর্ডার সফল হয়েছে! ডেলিভারির জন্য আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।"
+  //       );
+  //       onSuccess?.();
+  //     } else {
+  //       toast.error("অর্ডার দেওয়া যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।");
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //     toast.error("কিছু ভুল হয়েছে!");
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,43 +178,66 @@ export default function ShippingAddressForm({
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json();
 
-        addOrder({
-          id: data.orderNumber,
-          customerName: formData.customerName,
-          phoneNumber: formData.phoneNumber,
-          address: formData.address,
-          division: formData.divisionName,
-          district: formData.districtName,
-          upazila: formData.upazilaName,
-          city: formData.city, // ✅ Save city to order store
-          postalCode: formData.postalCode,
-          deliveryInstruction: formData.deliveryInstruction,
-          items: getGroupedItems(),
-          totalPrice: getTotalPrice() + DELIVERY_CHARGE,
-          paymentMethod: "Cash on Delivery",
-          status: "pending",
-          orderDate: formatDate(new Date()),
-        });
-
-        clearCart();
-        toast.success(
-          "🎉 অর্ডার সফল হয়েছে! ডেলিভারির জন্য আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।"
+      // Handle rate limit error (429)
+      if (res.status === 429) {
+        const minutesUntilReset = Math.ceil((data.retryAfter || 0) / 60);
+        toast.error(
+          `অনেক বেশি অর্ডার দেওয়া হয়েছে। অনুগ্রহ করে ${minutesUntilReset} মিনিট পরে আবার চেষ্টা করুন।`,
+          { duration: 6000 }
         );
-        onSuccess?.();
-      } else {
-        toast.error("অর্ডার দেওয়া যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।");
+        return;
       }
+
+      // Handle validation error (400)
+      if (res.status === 400) {
+        toast.error(data.error || "অবৈধ তথ্য। অনুগ্রহ করে সঠিক তথ্য দিন।");
+        console.error("Validation errors:", data.details);
+        return;
+      }
+
+      // Handle other errors
+      if (!res.ok) {
+        toast.error(
+          data.error || "অর্ডার দেওয়া যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।"
+        );
+        return;
+      }
+
+      // Success - Save order to local store
+      addOrder({
+        id: data.orderNumber,
+        customerName: formData.customerName,
+        phoneNumber: formData.phoneNumber,
+        address: formData.address,
+        division: formData.divisionName,
+        district: formData.districtName,
+        upazila: formData.upazilaName,
+        city: formData.city,
+        postalCode: formData.postalCode,
+        deliveryInstruction: formData.deliveryInstruction,
+        items: getGroupedItems(),
+        totalPrice: getTotalPrice() + DELIVERY_CHARGE,
+        paymentMethod: "Cash on Delivery",
+        status: "pending",
+        orderDate: formatDate(new Date()),
+      });
+
+      clearCart();
+      toast.success(
+        "🎉 অর্ডার সফল হয়েছে! ডেলিভারির জন্য আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।"
+      );
+      onSuccess?.();
     } catch (error) {
-      console.error(error);
-      toast.error("কিছু ভুল হয়েছে!");
+      console.error("Order creation error:", error);
+      toast.error("ইন্টারনেট সংযোগ সমস্যা! অনুগ্রহ করে আবার চেষ্টা করুন।");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  
   return (
     <form
       onSubmit={handleSubmit}

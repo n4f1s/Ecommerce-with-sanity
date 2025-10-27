@@ -5,6 +5,7 @@ import { useState } from "react";
 import { PortableText, PortableTextComponents } from "next-sanity";
 import { urlFor } from "@/sanity/lib/image";
 import { Product } from "@/sanity.types";
+import Image from "next/image";
 
 interface ProductDetailTabsProps {
     product: Product;
@@ -13,10 +14,12 @@ interface ProductDetailTabsProps {
 const components: PortableTextComponents = {
     types: {
         image: ({ value }) => (
-            <div className="my-6 flex justify-center">
-                <img
+            <div className="my-4 flex justify-center">
+                <Image
                     src={urlFor(value).width(800).format("webp").url()}
                     alt={value.alt || "Product image"}
+                    width={800}
+                    height={500}
                     className="rounded-lg shadow-md object-cover"
                 />
             </div>

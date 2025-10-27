@@ -85,7 +85,7 @@ function ProductThumb({ product }: { product: Product }) {
                 </p>
 
                 <p className="mt-2 text-lg font-bold text-gray-900">
-                    Tk {product.price?.toFixed(2)}
+                    Tk {product.price}
                 </p>
             </div>
         </Link>

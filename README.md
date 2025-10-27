@@ -64,8 +64,11 @@ ecommerce-with-sanity
 │  │     ├─ loading.tsx
 │  │     └─ page.tsx
 │  ├─ api
-│  │  └─ create-order
-│  │     └─ route.ts
+│  │  └─ orders
+│  │     ├─ create-order
+│  │     │  └─ route.ts
+│  │     └─ sync-status
+│  │        └─ route.ts
 │  ├─ error.tsx
 │  ├─ favicon.ico
 │  ├─ globals.css
@@ -86,8 +89,11 @@ ecommerce-with-sanity
 │  │  ├─ Footer.tsx
 │  │  ├─ Header.tsx
 │  │  └─ ScrollToTop.tsx
-│  ├─ OrderNowButton.tsx
-│  ├─ Orders.tsx
+│  ├─ order
+│  │  ├─ OrderNowButton.tsx
+│  │  ├─ Orders.tsx
+│  │  ├─ OrderStatusStepper.tsx
+│  │  └─ ShippingAddressForm.tsx
 │  ├─ product
 │  │  ├─ AddToCartButton.tsx
 │  │  ├─ AddToCartQuantity.tsx
@@ -96,7 +102,6 @@ ecommerce-with-sanity
 │  │  ├─ ProductGrid.tsx
 │  │  ├─ ProductImageGallery.tsx
 │  │  └─ ProductsView.tsx
-│  ├─ ShippingAddressForm.tsx
 │  ├─ ui
 │  │  ├─ button.tsx
 │  │  ├─ command.tsx
@@ -110,9 +115,13 @@ ecommerce-with-sanity
 │  └─ locations.json
 ├─ eslint.config.mjs
 ├─ hooks
+│  ├─ hooks
+│  │  └─ useOrderStatusSync.ts
 │  └─ useLocations.ts
 ├─ lib
 │  ├─ constant.ts
+│  ├─ schemas
+│  │  └─ order.ts
 │  ├─ types
 │  │  └─ locations.ts
 │  ├─ utils.ts
@@ -159,8 +168,7 @@ ecommerce-with-sanity
 ├─ sanity.types.ts
 ├─ schema.json
 ├─ scripts
-│  ├─ fetch-bd-locations.js
-│  └─ verify-connections.js
+│  └─ generate-locations.js
 ├─ store
 │  ├─ cart-store.ts
 │  └─ order-store.ts

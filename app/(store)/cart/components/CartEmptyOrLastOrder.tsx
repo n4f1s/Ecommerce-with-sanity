@@ -160,7 +160,7 @@ export default function CartEmptyOrLastOrder() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-800">
-                        Tk {((item.product.price ?? 0) * (item.quantity ?? 0)).toFixed(2)}
+                        Tk {((item.product.price ?? 0) * (item.quantity ?? 0))}
                       </p>
                       <p className="text-xs text-gray-500">
                         Tk {item.product.price ?? 0} × {item.quantity ?? 0}
@@ -174,7 +174,7 @@ export default function CartEmptyOrLastOrder() {
               <div className="mt-6 space-y-2 border-t pt-4">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>Tk {(lastOrder.totalPrice - 120).toFixed(2)}</span>
+                  <span>Tk {(lastOrder.totalPrice - 120)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Delivery Charge</span>
@@ -182,7 +182,7 @@ export default function CartEmptyOrLastOrder() {
                 </div>
                 <div className="flex justify-between text-xl font-bold text-gray-800 pt-2 border-t-2 border-gray-300">
                   <span>Total</span>
-                  <span className="text-green-600">Tk {lastOrder.totalPrice.toFixed(2)}</span>
+                  <span className="text-green-600">Tk {lastOrder.totalPrice}</span>
                 </div>
               </div>
             </div>

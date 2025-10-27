@@ -168,7 +168,7 @@ const Orders = () => {
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-gray-800">
-                          Tk {((item.product.price ?? 0) * (item.quantity ?? 0)).toFixed(2)}
+                          Tk {((item.product.price ?? 0) * (item.quantity ?? 0))}
                         </p>
                         <p className="text-xs text-gray-500">Qty: {item.quantity ?? 0}</p>
                       </div>
@@ -181,7 +181,7 @@ const Orders = () => {
                   {/* Subtotal */}
                   <div className="flex justify-between items-center text-gray-700">
                     <span className="font-medium">Subtotal</span>
-                    <span className="font-semibold">Tk {subtotal.toFixed(2)}</span>
+                    <span className="font-semibold">Tk {subtotal}</span>
                   </div>
 
                   {/* Delivery Charge */}
@@ -190,7 +190,7 @@ const Orders = () => {
                       <Truck className="w-4 h-4 text-theme-primary" />
                       Delivery Charge
                     </span>
-                    <span className="font-semibold">Tk {DELIVERY_CHARGE.toFixed(2)}</span>
+                    <span className="font-semibold">Tk {DELIVERY_CHARGE}</span>
                   </div>
 
                   {/* Divider */}
@@ -200,7 +200,7 @@ const Orders = () => {
                   <div className="flex justify-between items-center pt-2">
                     <span className="text-xl font-bold text-gray-800">Total Amount</span>
                     <span className="text-2xl font-bold text-theme-primary">
-                      Tk {order.totalPrice.toFixed(2)}
+                      Tk {order.totalPrice}
                     </span>
                   </div>
                 </div>

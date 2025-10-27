@@ -51,7 +51,9 @@ export default function HeroBanner() {
                             src="/heroBanner.webp"
                             alt="Delicious food hero"
                             fill
+                            sizes="(max-width: 640px) 320px, (max-width: 1024px) 420px, 500px"
                             priority
+                            fetchPriority="high"
                             className="object-contain drop-shadow-2xl"
                         />
                     </div>

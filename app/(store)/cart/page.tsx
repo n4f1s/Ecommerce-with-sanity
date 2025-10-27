@@ -54,6 +54,8 @@ function CartPage() {
                                             className="w-full h-full object-cover rounded"
                                             width={96}
                                             height={96}
+                                            priority
+                                            fetchPriority="high"
                                         />
                                     )}
                                 </div>
