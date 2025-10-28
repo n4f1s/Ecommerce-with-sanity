@@ -10,16 +10,19 @@ jobs:
     # environment: production
 
     env:
+      # Public Sanity config (Repository Variables)
       NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
       NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET }}
       NEXT_PUBLIC_SANITY_API_VERSION: ${{ vars.NEXT_PUBLIC_SANITY_API_VERSION }}
       NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL }}
 
+      # Private Sanity tokens (Secrets preferred; Variables fallback)
       SANITY_API_READ_TOKEN_SEC: ${{ secrets.SANITY_API_READ_TOKEN }}
       SANITY_API_READ_TOKEN_VAR: ${{ vars.SANITY_API_READ_TOKEN }}
       SANITY_API_TOKEN_SEC: ${{ secrets.SANITY_API_TOKEN }}
       SANITY_API_TOKEN_VAR: ${{ vars.SANITY_API_TOKEN }}
 
+      # SSH (Secrets preferred; Variables fallback)
       SSH_USER_SEC: ${{ secrets.SSH_USER }}
       SSH_HOST_SEC: ${{ secrets.SSH_HOST }}
       SSH_PRIVATE_KEY_SEC: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -27,7 +30,9 @@ jobs:
       SSH_HOST_VAR: ${{ vars.SSH_HOST }}
       SSH_PRIVATE_KEY_VAR: ${{ vars.SSH_PRIVATE_KEY }}
 
+      # Deploy target directory on server
       APP_DIR: ${{ vars.APP_DIR }}
+
       NEXT_TELEMETRY_DISABLED: 1
 
     steps:
@@ -63,17 +68,20 @@ jobs:
           set -euo pipefail
           sanitize() { v="$1"; v="${v%\"}"; v="${v#\"}"; printf '%s' "$v"; }
 
+          # Public config
           NPID="$(sanitize "${NEXT_PUBLIC_SANITY_PROJECT_ID:-}")"
           NPDATASET="$(sanitize "${NEXT_PUBLIC_SANITY_DATASET:-}")"
           NPAPIVER="$(sanitize "${NEXT_PUBLIC_SANITY_API_VERSION:-}")"
           if [ -z "$NPAPIVER" ]; then NPAPIVER="2025-10-28"; fi
           NPBASEURL="$(sanitize "${NEXT_PUBLIC_BASE_URL:-}")"
 
+          # Tokens
           READ_TOKEN="$(sanitize "${SANITY_API_READ_TOKEN_SEC:-}")"
           if [ -z "$READ_TOKEN" ]; then READ_TOKEN="$(sanitize "${SANITY_API_READ_TOKEN_VAR:-}")"; fi
           WRITE_TOKEN="$(sanitize "${SANITY_API_TOKEN_SEC:-}")"
           if [ -z "$WRITE_TOKEN" ]; then WRITE_TOKEN="$(sanitize "${SANITY_API_TOKEN_VAR:-}")"; fi
 
+          # SSH
           DEPLOY_SSH_USER="$(sanitize "${SSH_USER_SEC:-}")"
           if [ -z "$DEPLOY_SSH_USER" ]; then DEPLOY_SSH_USER="$(sanitize "${SSH_USER_VAR:-}")"; fi
           DEPLOY_SSH_HOST="$(sanitize "${SSH_HOST_SEC:-}")"
@@ -109,7 +117,7 @@ jobs:
       - name: Build app (standalone)
         run: pnpm run build
 
-      - name: Package standalone artifact
+      - name: Package standalone artifact (preserve tree)
         shell: bash
         run: |
           set -euo pipefail
@@ -137,7 +145,7 @@ jobs:
       - name: Upload artifact
         run: scp -i ~/.ssh/id_rsa "shophikes_${SHORT_SHA}.tar.gz" ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}:/tmp/
 
-      - name: Activate release and zero-downtime reload
+      - name: Activate release and start PM2 on standalone
         env:
           PORT: 3005
           NODE_ENV: production
@@ -165,10 +173,9 @@ jobs:
             APP_ENTRY=\"\$CURRENT_LINK/standalone/server.js\"
 
             if pm2 describe shophikes >/dev/null 2>&1; then
-              pm2 reload shophikes --update-env
-            else
-              pm2 start \"\$APP_ENTRY\" --name shophikes --cwd \"\$CURRENT_LINK\" -i 1
+              pm2 delete shophikes
             fi
 
+            pm2 start \"\$APP_ENTRY\" --name shophikes --cwd \"\$CURRENT_LINK\" -i 1
             pm2 save
           "
