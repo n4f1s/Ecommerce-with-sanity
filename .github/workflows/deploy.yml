@@ -18,14 +18,17 @@ jobs:
       # Next.js
       NEXT_TELEMETRY_DISABLED: 1
 
-      # Public Sanity config (from Repository Variables)
+      # Public Sanity config (Repository Variables)
       NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
       NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET }}
       NEXT_PUBLIC_SANITY_API_VERSION: ${{ vars.NEXT_PUBLIC_SANITY_API_VERSION }}
 
-      # Private tokens (from Secrets)
+      # Private tokens (Repository Secrets)
       SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
       SANITY_API_READ_TOKEN: ${{ secrets.SANITY_API_READ_TOKEN }}
+
+      # Other app vars as needed (vars.* or secrets.*)
+      NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL }}
 
     steps:
       - name: Checkout repository
@@ -46,7 +49,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Persist Next.js incremental cache to remove "No Cache Detected"
+      # CI build caching to remove "No Cache Detected" and speed up rebuilds
       - name: Cache Next.js build cache
         uses: actions/cache@v4
         with:
@@ -54,30 +57,36 @@ jobs:
           key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**/*.[jt]s', '**/*.[jt]sx', 'next.config.*', 'tsconfig.json') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
-      # Optional: strip accidental surrounding quotes from repository variables
-      - name: Normalize public Sanity env (strip quotes)
-        shell: bash
-        run: |
-          for k in NEXT_PUBLIC_SANITY_PROJECT_ID NEXT_PUBLIC_SANITY_DATASET NEXT_PUBLIC_SANITY_API_VERSION; do
-            v="${!k}"; v="${v%\"}"; v="${v#\"}"
-            echo "$k=$v" >> "$GITHUB_ENV"
-          done
 
-      # Fail fast if required Sanity envs are still empty
-      - name: Verify Sanity env
+      # Normalize public vars (strip surrounding quotes) and ensure apiVersion fallback
+      - name: Normalize/verify Sanity env
         shell: bash
         run: |
           set -euo pipefail
+
+          # Strip accidental quotes from repo variables
+          for k in NEXT_PUBLIC_SANITY_PROJECT_ID NEXT_PUBLIC_SANITY_DATASET NEXT_PUBLIC_SANITY_API_VERSION NEXT_PUBLIC_BASE_URL; do
+            v="${!k:-}"; v="${v%\"}"; v="${v#\"}"
+            echo "$k=$v" >> "$GITHUB_ENV"
+          done
+
+          # Provide a safe default apiVersion if missing
+          if [ -z "${NEXT_PUBLIC_SANITY_API_VERSION:-}" ]; then
+            echo "NEXT_PUBLIC_SANITY_API_VERSION=2025-10-28" >> "$GITHUB_ENV"
+          fi
+
+          # Fail fast if still missing projectId or dataset
           : "${NEXT_PUBLIC_SANITY_PROJECT_ID:?Missing NEXT_PUBLIC_SANITY_PROJECT_ID}"
           : "${NEXT_PUBLIC_SANITY_DATASET:?Missing NEXT_PUBLIC_SANITY_DATASET}"
           : "${NEXT_PUBLIC_SANITY_API_VERSION:?Missing NEXT_PUBLIC_SANITY_API_VERSION}"
           echo "Sanity env OK"
 
-      # Build without --turbo to use stable production bundler
-      # Ensure next.config.js has: output: 'standalone'
+      # Build without --turbo to use the stable production bundler
+      # Ensure next.config.js includes: output: 'standalone'
       - name: Build app (standalone)
         run: pnpm run build
 
+      # Package minimal standalone artifact
       - name: Package standalone artifact
         shell: bash
         run: |
@@ -122,8 +131,10 @@ jobs:
             tar -xzf \"/tmp/shophikes_${SHORT_SHA}.tar.gz\" -C \"\$NEW_RELEASE_DIR\"
             rm -f \"/tmp/shophikes_${SHORT_SHA}.tar.gz\"
 
+            # Atomic symlink swap
             ln -sfn \"\$NEW_RELEASE_DIR\" \"\$CURRENT_LINK\"
 
+            # Ensure PM2
             if ! command -v pm2 >/dev/null 2>&1; then
               npm i -g pm2
             fi
@@ -134,6 +145,7 @@ jobs:
             APP_SERVER_DIR=\"\$CURRENT_LINK/server\"
             APP_ENTRY=\"\$APP_SERVER_DIR/server.js\"
 
+            # Start once, then reload for zero downtime
             if pm2 describe shophikes >/dev/null 2>&1; then
               pm2 reload shophikes --update-env
             else
