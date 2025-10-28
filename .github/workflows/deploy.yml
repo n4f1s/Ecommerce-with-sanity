@@ -9,63 +9,93 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      # Public Sanity (Repository Variables; values should be raw, no quotes)
       NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
       NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET }}
       NEXT_PUBLIC_SANITY_API_VERSION: ${{ vars.NEXT_PUBLIC_SANITY_API_VERSION }}
       NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL }}
+
+      # Private tokens (Secrets preferred; Variables fallback)
       SANITY_API_READ_TOKEN_SEC: ${{ secrets.SANITY_API_READ_TOKEN }}
       SANITY_API_READ_TOKEN_VAR: ${{ vars.SANITY_API_READ_TOKEN }}
       SANITY_API_TOKEN_SEC: ${{ secrets.SANITY_API_TOKEN }}
       SANITY_API_TOKEN_VAR: ${{ vars.SANITY_API_TOKEN }}
+
+      # SSH (Secrets preferred; Variables fallback)
       SSH_USER_SEC: ${{ secrets.SSH_USER }}
       SSH_HOST_SEC: ${{ secrets.SSH_HOST }}
       SSH_PRIVATE_KEY_SEC: ${{ secrets.SSH_PRIVATE_KEY }}
       SSH_USER_VAR: ${{ vars.SSH_USER }}
       SSH_HOST_VAR: ${{ vars.SSH_HOST }}
       SSH_PRIVATE_KEY_VAR: ${{ vars.SSH_PRIVATE_KEY }}
+
+      # Deploy target on server (Repository Variable)
       APP_DIR: ${{ vars.APP_DIR }}
+
       NEXT_TELEMETRY_DISABLED: 1
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with: { version: 10.19.0, run_install: false }
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - uses: actions/cache@v4
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+
+      - name: 🧱 Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.19.0
+          run_install: false
+
+      - name: 🟢 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: 📦 Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: 🧠 Cache Next build cache
+        uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.next/cache
           key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**/*.[jt]s', '**/*.[jt]sx', 'next.config.*', 'tsconfig.json') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      - name: Normalize env
+      - name: 🔧 Normalize and verify env (build-time + SSH)
         shell: bash
         run: |
           set -euo pipefail
-          s(){ v="$1"; v="${v%\"}"; v="${v#\"}"; printf '%s' "$v"; }
-          READ_TOKEN="$(s "${SANITY_API_READ_TOKEN_SEC:-}")"; [ -n "$READ_TOKEN" ] || READ_TOKEN="$(s "${SANITY_API_READ_TOKEN_VAR:-}")"
-          WRITE_TOKEN="$(s "${SANITY_API_TOKEN_SEC:-}")"; [ -n "$WRITE_TOKEN" ] || WRITE_TOKEN="$(s "${SANITY_API_TOKEN_VAR:-}")"
-          SSH_USER="$(s "${SSH_USER_SEC:-}")"; [ -n "$SSH_USER" ] || SSH_USER="$(s "${SSH_USER_VAR:-}")"
-          SSH_HOST="$(s "${SSH_HOST_SEC:-}")"; [ -n "$SSH_HOST" ] || SSH_HOST="$(s "${SSH_HOST_VAR:-}")"
-          RAW_KEY="$(s "${SSH_PRIVATE_KEY_SEC:-}")"; [ -n "$RAW_KEY" ] || RAW_KEY="$(s "${SSH_PRIVATE_KEY_VAR:-}")"
+          strip_all() { v="$1"; v="${v//\"/}"; v="${v//\'/}"; v="${v// /}"; printf '%s' "$v"; }
+          # Sanitize public build-time envs to avoid invalid chars (fixes projectId error)
+          echo "NEXT_PUBLIC_SANITY_PROJECT_ID=$(strip_all "${NEXT_PUBLIC_SANITY_PROJECT_ID:-}")" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SANITY_DATASET=$(strip_all "${NEXT_PUBLIC_SANITY_DATASET:-}")"       >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SANITY_API_VERSION=$(strip_all "${NEXT_PUBLIC_SANITY_API_VERSION:-2025-10-28}")" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_BASE_URL=$(strip_all "${NEXT_PUBLIC_BASE_URL:-}")"                   >> "$GITHUB_ENV"
+          # Private tokens
+          READ_TOKEN="${SANITY_API_READ_TOKEN_SEC:-}"; [ -n "$READ_TOKEN" ] || READ_TOKEN="${SANITY_API_READ_TOKEN_VAR:-}"
+          WRITE_TOKEN="${SANITY_API_TOKEN_SEC:-}";    [ -n "$WRITE_TOKEN" ] || WRITE_TOKEN="${SANITY_API_TOKEN_VAR:-}"
+          echo "SANITY_API_READ_TOKEN=$READ_TOKEN" >> "$GITHUB_ENV"
+          echo "SANITY_API_TOKEN=$WRITE_TOKEN"     >> "$GITHUB_ENV"
+          # SSH
+          SSH_USER="${SSH_USER_SEC:-}"; [ -n "$SSH_USER" ] || SSH_USER="${SSH_USER_VAR:-}"
+          SSH_HOST="${SSH_HOST_SEC:-}"; [ -n "$SSH_HOST" ] || SSH_HOST="${SSH_HOST_VAR:-}"
+          RAW_KEY="${SSH_PRIVATE_KEY_SEC:-}"; [ -n "$RAW_KEY" ] || RAW_KEY="${SSH_PRIVATE_KEY_VAR:-}"
           KEY="$RUNNER_TEMP/id_rsa"; printf '%s\n' "$RAW_KEY" > "$KEY"; sed -i 's/\r$//' "$KEY"; chmod 600 "$KEY"
-          {
-            echo "SANITY_API_READ_TOKEN=$READ_TOKEN"
-            echo "SANITY_API_TOKEN=$WRITE_TOKEN"
-            echo "DEPLOY_SSH_USER=$SSH_USER"
-            echo "DEPLOY_SSH_HOST=$SSH_HOST"
-            echo "SSH_KEY_FILE=$KEY"
-          } >> "$GITHUB_ENV"
-          : "${SSH_USER:?Missing SSH_USER}"
-          : "${SSH_HOST:?Missing SSH_HOST}"
+          echo "DEPLOY_SSH_USER=$SSH_USER"   >> "$GITHUB_ENV"
+          echo "DEPLOY_SSH_HOST=$SSH_HOST"   >> "$GITHUB_ENV"
+          echo "SSH_KEY_FILE=$KEY"           >> "$GITHUB_ENV"
+          # Required assertions
+          : "${NEXT_PUBLIC_SANITY_PROJECT_ID:?Missing NEXT_PUBLIC_SANITY_PROJECT_ID}"
+          : "${NEXT_PUBLIC_SANITY_DATASET:?Missing NEXT_PUBLIC_SANITY_DATASET}"
+          : "${SANITY_API_READ_TOKEN:?Missing SANITY_API_READ_TOKEN}"
+          : "${DEPLOY_SSH_USER:?Missing SSH_USER}"
+          : "${DEPLOY_SSH_HOST:?Missing SSH_HOST}"
           test -s "$KEY" || (echo "Missing SSH_PRIVATE_KEY" >&2; exit 1)
 
-      - name: Build (standalone)
+      - name: 🏗️ Build (standalone)
         run: pnpm run build
 
-      - name: Package standalone (preserve tree)
+      - name: 📦 Package standalone artifact (preserve tree)
         shell: bash
         run: |
           set -euo pipefail
@@ -78,73 +108,66 @@ jobs:
           [ -d public ] && cp -r public out/standalone/public
           tar -C out -czf "shophikes_${SHORT_SHA}.tar.gz" standalone
 
-      - name: Create ecosystem.config.js file (local)
+      - name: 🔐 Setup SSH
         shell: bash
         run: |
           set -euo pipefail
-          cat > ecosystem.config.js <<'EOF'
-          module.exports = {
-            apps: [
-              {
-                name: "shophikes",
-                cwd: "/home/bitnami/htdocs/Ecommerce-with-sanity/current",
-                script: "standalone/server.js",
-                instances: 1,
-                exec_mode: "cluster",
-                env: {
-                  PORT: 3005,
-                  NODE_ENV: "production",
-                  SANITY_API_READ_TOKEN: "__SANITY_API_READ_TOKEN__",
-                  SANITY_API_TOKEN: "__SANITY_API_TOKEN__"
-              }
-          }
-          ]
-          }
-          
-          EOF
-          # Inject secrets locally (escape / and &)
+          mkdir -p ~/.ssh
+          install -m 600 "$SSH_KEY_FILE" ~/.ssh/id_rsa
+          ssh-keyscan -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=yes -o BatchMode=yes ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST} true
+
+      - name: 📝 Create ecosystem.config.js locally (no heredoc in YAML)
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > ecosystem.config.js
+          echo 'module.exports = {' >> ecosystem.config.js
+          echo '  apps: [' >> ecosystem.config.js
+          echo '    {' >> ecosystem.config.js
+          echo '      name: "shophikes",' >> ecosystem.config.js
+          echo '      cwd: "/home/bitnami/htdocs/Ecommerce-with-sanity/current",' >> ecosystem.config.js
+          echo '      script: "standalone/server.js",' >> ecosystem.config.js
+          echo '      instances: 1,' >> ecosystem.config.js
+          echo '      exec_mode: "cluster",' >> ecosystem.config.js
+          echo '      env: {' >> ecosystem.config.js
+          echo '        PORT: 3005,' >> ecosystem.config.js
+          echo '        NODE_ENV: "production",' >> ecosystem.config.js
+          echo '        SANITY_API_READ_TOKEN: "__SANITY_API_READ_TOKEN__",' >> ecosystem.config.js
+          echo '        SANITY_API_TOKEN: "__SANITY_API_TOKEN__"' >> ecosystem.config.js
+          echo '      }' >> ecosystem.config.js
+          echo '    }' >> ecosystem.config.js
+          echo '  ]' >> ecosystem.config.js
+          echo '}' >> ecosystem.config.js
+          # Inject secrets (escape / and &)
           READ_ESC=$(printf "%s" "${SANITY_API_READ_TOKEN}" | sed -e 's/[\/&]/\\&/g')
           WRITE_ESC=$(printf "%s" "${SANITY_API_TOKEN}" | sed -e 's/[\/&]/\\&/g')
           sed -i "s/__SANITY_API_READ_TOKEN__/${READ_ESC}/g" ecosystem.config.js
           sed -i "s/__SANITY_API_TOKEN__/${WRITE_ESC}/g"     ecosystem.config.js
 
-      - name: Prepare remote script (remote.sh)
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat > remote.sh <<'SH'
-          #!/usr/bin/env bash
-          set -euo pipefail
-
-          APP_DIR="${APP_DIR}"
-          SHORT_SHA="${SHORT_SHA}"
-
-          RELEASES_DIR="${APP_DIR}/releases"
-          CURRENT_LINK="${APP_DIR}/current"
-          NEW_RELEASE_DIR="${RELEASES_DIR}/${SHORT_SHA}"
-
-          mkdir -p "${RELEASES_DIR}" "${APP_DIR}/logs"
-          rm -rf "${NEW_RELEASE_DIR}" && mkdir -p "${NEW_RELEASE_DIR}"
-          tar -xzf "/tmp/shophikes_${SHORT_SHA}.tar.gz" -C "${NEW_RELEASE_DIR}"
-          rm -f "/tmp/shophikes_${SHORT_SHA}.tar.gz"
-          ln -sfn "${NEW_RELEASE_DIR}" "${CURRENT_LINK}"
-
-          if ! command -v pm2 >/dev/null 2>&1; then npm i -g pm2; fi
-
-          mv /tmp/ecosystem.config.js "${APP_DIR}/ecosystem.config.js"
-
-          pm2 delete shophikes >/dev/null 2>&1 || true
-          pm2 start "${APP_DIR}/ecosystem.config.js" --only shophikes
-          pm2 save
-          SH
-          chmod +x remote.sh
-
-      - name: Upload artifact + helper files
+      - name: ⬆️ Upload artifact + ecosystem
         run: |
           scp -i ~/.ssh/id_rsa "shophikes_${SHORT_SHA}.tar.gz" ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}:/tmp/
-          scp -i ~/.ssh/id_rsa ecosystem.config.js ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}:/tmp/
-          scp -i ~/.ssh/id_rsa remote.sh            ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}:/tmp/
+          scp -i ~/.ssh/id_rsa ecosystem.config.js            ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}:/tmp/
 
-      - name: Run remote deploy script
+      - name: 🚀 Activate release and start via PM2
+        env:
+          PORT: 3005
+          NODE_ENV: production
         run: |
-          ssh -i ~/.ssh/id_rsa ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST} "APP_DIR='${APP_DIR}' SHORT_SHA='${SHORT_SHA}' bash /tmp/remote.sh && rm -f /tmp/remote.sh /tmp/ecosystem.config.js"
+          ssh -i ~/.ssh/id_rsa ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST} "
+            set -euo pipefail
+            RELEASES_DIR=\"${APP_DIR}/releases\"
+            CURRENT_LINK=\"${APP_DIR}/current\"
+            NEW_RELEASE_DIR=\"\$RELEASES_DIR/${SHORT_SHA}\"
+            mkdir -p \"\$RELEASES_DIR\" \"${APP_DIR}/logs\"
+            rm -rf \"\$NEW_RELEASE_DIR\" && mkdir -p \"\$NEW_RELEASE_DIR\"
+            tar -xzf \"/tmp/shophikes_${SHORT_SHA}.tar.gz\" -C \"\$NEW_RELEASE_DIR\"
+            rm -f \"/tmp/shophikes_${SHORT_SHA}.tar.gz\"
+            ln -sfn \"\$NEW_RELEASE_DIR\" \"\$CURRENT_LINK\"
+            if ! command -v pm2 >/dev/null 2>&1; then npm i -g pm2; fi
+            mv /tmp/ecosystem.config.js \"${APP_DIR}/ecosystem.config.js\"
+            pm2 delete shophikes >/dev/null 2>&1 || true
+            pm2 start \"${APP_DIR}/ecosystem.config.js\" --only shophikes
+            pm2 save
+          "
