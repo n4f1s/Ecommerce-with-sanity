@@ -10,21 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Server deploy
+      # Deploy targets
       SSH_USER: ${{ secrets.SSH_USER }}
       SSH_HOST: ${{ secrets.SSH_HOST }}
-      APP_DIR: ${{ secrets.APP_DIR }}
+      APP_DIR: ${{ vars.APP_DIR }}
 
       # Next.js
       NEXT_TELEMETRY_DISABLED: 1
 
-      # Sanity (required for build and runtime-safe client init)
-      NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
-      NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
-      NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
+      # Public Sanity config (from Repository Variables)
+      NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+      NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET }}
+      NEXT_PUBLIC_SANITY_API_VERSION: ${{ vars.NEXT_PUBLIC_SANITY_API_VERSION }}
 
-      # If you intentionally embed a public token (not recommended), uncomment:
-      # NEXT_PUBLIC_SANITY_TOKEN: ${{ secrets.NEXT_PUBLIC_SANITY_TOKEN }}
+      # Private tokens (from Secrets)
+      SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
+      SANITY_API_READ_TOKEN: ${{ secrets.SANITY_API_READ_TOKEN }}
 
     steps:
       - name: Checkout repository
@@ -45,7 +46,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Persist Next.js incremental cache between CI runs to avoid "No Cache Detected"
+      # Persist Next.js incremental cache to remove "No Cache Detected"
       - name: Cache Next.js build cache
         uses: actions/cache@v4
         with:
@@ -53,8 +54,16 @@ jobs:
           key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**/*.[jt]s', '**/*.[jt]sx', 'next.config.*', 'tsconfig.json') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
+      # Optional: strip accidental surrounding quotes from repository variables
+      - name: Normalize public Sanity env (strip quotes)
+        shell: bash
+        run: |
+          for k in NEXT_PUBLIC_SANITY_PROJECT_ID NEXT_PUBLIC_SANITY_DATASET NEXT_PUBLIC_SANITY_API_VERSION; do
+            v="${!k}"; v="${v%\"}"; v="${v#\"}"
+            echo "$k=$v" >> "$GITHUB_ENV"
+          done
 
-      # Fail fast if required Sanity envs are missing
+      # Fail fast if required Sanity envs are still empty
       - name: Verify Sanity env
         shell: bash
         run: |
@@ -64,11 +73,11 @@ jobs:
           : "${NEXT_PUBLIC_SANITY_API_VERSION:?Missing NEXT_PUBLIC_SANITY_API_VERSION}"
           echo "Sanity env OK"
 
-      # Build without Turbopack flag; ensure next.config.js has: output: 'standalone'
+      # Build without --turbo to use stable production bundler
+      # Ensure next.config.js has: output: 'standalone'
       - name: Build app (standalone)
         run: pnpm run build
 
-      # Package the minimal standalone artifact
       - name: Package standalone artifact
         shell: bash
         run: |
@@ -113,10 +122,8 @@ jobs:
             tar -xzf \"/tmp/shophikes_${SHORT_SHA}.tar.gz\" -C \"\$NEW_RELEASE_DIR\"
             rm -f \"/tmp/shophikes_${SHORT_SHA}.tar.gz\"
 
-            # Atomic symlink swap
             ln -sfn \"\$NEW_RELEASE_DIR\" \"\$CURRENT_LINK\"
 
-            # Ensure PM2
             if ! command -v pm2 >/dev/null 2>&1; then
               npm i -g pm2
             fi
@@ -127,7 +134,6 @@ jobs:
             APP_SERVER_DIR=\"\$CURRENT_LINK/server\"
             APP_ENTRY=\"\$APP_SERVER_DIR/server.js\"
 
-            # Start once, then reload for zero downtime
             if pm2 describe shophikes >/dev/null 2>&1; then
               pm2 reload shophikes --update-env
             else
