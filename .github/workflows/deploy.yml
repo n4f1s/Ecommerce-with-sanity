@@ -13,7 +13,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🧩 Node + pnpm setup with caching
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -29,7 +28,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # ⚡ Cache Next.js build output (improves rebuild speed)
       - name: Restore Next.js build cache
         uses: actions/cache@v4
         with:
@@ -39,11 +37,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-
 
-      # 🏗️ Build the app (no --turbo for stability)
+      # 👇 Add your environment variables here
       - name: Build app
+        env:
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+          NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
+          NEXT_PUBLIC_SANITY_TOKEN: ${{ secrets.NEXT_PUBLIC_SANITY_TOKEN }}
         run: pnpm run build
 
-      # 🔐 Deploy to your Lightsail server
       - name: Deploy to Lightsail
         env:
           DEPLOY_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
