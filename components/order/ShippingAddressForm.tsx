@@ -30,7 +30,7 @@ export default function ShippingAddressForm({
   onChargeChange,
 }: ShippingAddressFormProps) {
   const { getGroupedItems, getTotalPrice, clearCart } = useCartStore();
-  const { addOrder } = useOrderStore();
+  const { addOrder, getLastOrder } = useOrderStore();
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -53,6 +53,57 @@ export default function ShippingAddressForm({
     formData.divisionId,
     formData.districtId
   );
+
+  useEffect(() => {
+    // If divisionName is present but divisionId is empty, try to map it:
+    if (!formData.divisionId && formData.divisionName && divisions.length) {
+      const match = divisions.find(
+        (d) =>
+          d.name.toLowerCase() === formData.divisionName.toLowerCase() ||
+          d.bn_name === formData.divisionName
+      );
+      if (match) {
+        setFormData((prev) => ({
+          ...prev,
+          divisionId: match.id,
+        }));
+      }
+    }
+  }, [divisions, formData.divisionId, formData.divisionName]);
+
+  useEffect(() => {
+    // Map district
+    if (formData.divisionId && !formData.districtId && formData.districtName && districts.length) {
+      const match = districts.find(
+        (d) =>
+          d.name.toLowerCase() === formData.districtName.toLowerCase() ||
+          d.bn_name === formData.districtName
+      );
+      if (match) {
+        setFormData((prev) => ({
+          ...prev,
+          districtId: match.id,
+        }));
+      }
+    }
+  }, [districts, formData.divisionId, formData.districtId, formData.districtName]);
+
+  useEffect(() => {
+    // Map upazila
+    if (formData.districtId && !formData.upazilaId && formData.upazilaName && upazilas.length) {
+      const match = upazilas.find(
+        (u) =>
+          u.name.toLowerCase() === formData.upazilaName.toLowerCase() ||
+          u.bn_name === formData.upazilaName
+      );
+      if (match) {
+        setFormData((prev) => ({
+          ...prev,
+          upazilaId: match.id,
+        }));
+      }
+    }
+  }, [upazilas, formData.districtId, formData.upazilaId, formData.upazilaName]);
 
   // Compute delivery charge by division name
   const deliveryCharge = useMemo(() => {
@@ -82,6 +133,43 @@ export default function ShippingAddressForm({
       upazilaName: "",
     });
   };
+
+  // On first mount, prefill from last order if form is empty
+  useEffect(() => {
+    const last = getLastOrder?.();
+    if (!last) return;
+
+    const isEmpty =
+      !formData.customerName &&
+      !formData.phoneNumber &&
+      !formData.address &&
+      !formData.divisionName &&
+      !formData.districtName &&
+      !formData.upazilaName &&
+      !formData.city &&
+      !formData.postalCode &&
+      !formData.deliveryInstruction;
+
+    if (isEmpty) {
+      setFormData((prev) => ({
+        ...prev,
+        customerName: last.customerName || "",
+        phoneNumber: last.phoneNumber || "",
+        address: last.address || "",
+        divisionId: "",                 // keep IDs empty unless you map names->ids
+        divisionName: last.division || "",
+        districtId: "",
+        districtName: last.district || "",
+        upazilaId: "",
+        upazilaName: last.upazila || "",
+        city: last.city || "",
+        postalCode: last.postalCode || "",
+        deliveryInstruction: last.deliveryInstruction || "",
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once
+
 
   // ✅ Handle district change
   const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -237,7 +325,7 @@ export default function ShippingAddressForm({
             type="tel"
             placeholder="01XXXXXXXXX"
             autoComplete="tel"
-            pattern="01[3-9]\d{8}"
+            pattern="(01[3-9]\d{8}|\+8801[3-9]\d{8})"
             value={formData.phoneNumber}
             onChange={(e) =>
               setFormData({ ...formData, phoneNumber: e.target.value })
@@ -359,7 +447,7 @@ export default function ShippingAddressForm({
             htmlFor="city"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            শহর / এলাকা <span className="text-red-500">*</span>
+            শহর / এলাকা
           </label>
           <input
             id="city"
@@ -372,7 +460,6 @@ export default function ShippingAddressForm({
               setFormData({ ...formData, city: e.target.value })
             }
             className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-theme-primary"
-            required
           />
         </div>
 
@@ -382,7 +469,7 @@ export default function ShippingAddressForm({
             htmlFor="postalCode"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            পোস্টাল কোড <span className="text-red-500">*</span>
+            পোস্টাল কোড
           </label>
           <input
             id="postalCode"
@@ -396,7 +483,6 @@ export default function ShippingAddressForm({
               setFormData({ ...formData, postalCode: e.target.value })
             }
             className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-theme-primary"
-            required
           />
         </div>
 

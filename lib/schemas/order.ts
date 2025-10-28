@@ -9,7 +9,7 @@ export const orderItemSchema = z.object({
 
 export const createOrderSchema = z.object({
   customerName: z.string().trim().min(2).max(100),
-  phoneNumber: z.string().trim().min(11),
+  phoneNumber: z.string().trim().min(11).max(14),
   address: z.string().trim().min(5).max(300),
   division: z.string().trim().min(1),
   district: z.string().trim().optional(),

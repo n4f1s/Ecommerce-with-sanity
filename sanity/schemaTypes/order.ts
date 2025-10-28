@@ -60,13 +60,11 @@ export const order = defineType({
       name: 'city',
       title: 'City',
       type: 'string',
-      validation: Rule => Rule.required()
     }),
     defineField({
       name: 'postalCode',
       title: 'Postal Code',
       type: 'string',
-      validation: Rule => Rule.required()
     }),
     defineField({
       name: 'deliveryInstruction',

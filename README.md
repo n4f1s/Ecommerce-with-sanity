@@ -120,12 +120,12 @@ ecommerce-with-sanity
 │  └─ useLocations.ts
 ├─ lib
 │  ├─ constant.ts
+│  ├─ rate-limit.ts
 │  ├─ schemas
 │  │  └─ order.ts
 │  ├─ types
 │  │  └─ locations.ts
-│  ├─ utils.ts
-│  └─ validation.ts
+│  └─ utils.ts
 ├─ next.config.ts
 ├─ package.json
 ├─ pnpm-lock.yaml
