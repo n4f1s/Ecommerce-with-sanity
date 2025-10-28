@@ -49,9 +49,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      # Build with Webpack to avoid Turbopack production crash
-      - name: Build app (webpack, standalone)
-        run: pnpm exec next build --webpack
+      # Build without --turbo to use the default production bundler
+      - name: Build app (standalone)
+        run: pnpm run build
 
       # Package standalone output for minimal server deploy
       - name: Package standalone artifact
