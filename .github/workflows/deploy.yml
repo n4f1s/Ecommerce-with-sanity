@@ -2,20 +2,16 @@ name: Deploy ShopHikes to Lightsail
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     env:
-      # Deploy targets
       SSH_USER: ${{ secrets.SSH_USER }}
       SSH_HOST: ${{ secrets.SSH_HOST }}
       APP_DIR: ${{ vars.APP_DIR }}
-
-      # Next.js
       NEXT_TELEMETRY_DISABLED: 1
 
       # Public Sanity config (Repository Variables)
@@ -24,7 +20,7 @@ jobs:
       NEXT_PUBLIC_SANITY_API_VERSION: ${{ vars.NEXT_PUBLIC_SANITY_API_VERSION }}
       NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL }}
 
-      # Private tokens from Secrets (preferred) and Variables (fallback)
+      # Private tokens (Secrets preferred; Variables fallback)
       SANITY_API_READ_TOKEN_SEC: ${{ secrets.SANITY_API_READ_TOKEN }}
       SANITY_API_READ_TOKEN_VAR: ${{ vars.SANITY_API_READ_TOKEN }}
       SANITY_API_TOKEN_SEC: ${{ secrets.SANITY_API_TOKEN }}
@@ -44,7 +40,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -57,32 +53,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      # Normalize repo variables, merge Secrets/Variables for tokens, set apiVersion fallback, and persist for subsequent steps
       - name: Normalize/verify env
         shell: bash
         run: |
           set -euo pipefail
-
           sanitize() { v="$1"; v="${v%\"}"; v="${v#\"}"; printf '%s' "$v"; }
 
-          # Public config
           NPID="$(sanitize "${NEXT_PUBLIC_SANITY_PROJECT_ID:-}")"
           NPDATASET="$(sanitize "${NEXT_PUBLIC_SANITY_DATASET:-}")"
           NPBASEURL="$(sanitize "${NEXT_PUBLIC_BASE_URL:-}")"
-          NPAPIVER_RAW="$(sanitize "${NEXT_PUBLIC_SANITY_API_VERSION:-}")"
-          if [ -z "$NPAPIVER_RAW" ]; then NPAPIVER_RAW="2025-10-28"; fi
+          NPAPIVER="$(sanitize "${NEXT_PUBLIC_SANITY_API_VERSION:-}")"
+          if [ -z "$NPAPIVER" ]; then NPAPIVER="2025-10-28"; fi
 
-          # Private tokens: prefer Secrets, fall back to Variables
           READ_TOKEN="$(sanitize "${SANITY_API_READ_TOKEN_SEC:-}")"
           if [ -z "$READ_TOKEN" ]; then READ_TOKEN="$(sanitize "${SANITY_API_READ_TOKEN_VAR:-}")"; fi
-
           WRITE_TOKEN="$(sanitize "${SANITY_API_TOKEN_SEC:-}")"
           if [ -z "$WRITE_TOKEN" ]; then WRITE_TOKEN="$(sanitize "${SANITY_API_TOKEN_VAR:-}")"; fi
 
-          # Export for current step and persist for later steps
           export NEXT_PUBLIC_SANITY_PROJECT_ID="$NPID"
           export NEXT_PUBLIC_SANITY_DATASET="$NPDATASET"
-          export NEXT_PUBLIC_SANITY_API_VERSION="$NPAPIVER_RAW"
+          export NEXT_PUBLIC_SANITY_API_VERSION="$NPAPIVER"
           export NEXT_PUBLIC_BASE_URL="$NPBASEURL"
           export SANITY_API_READ_TOKEN="$READ_TOKEN"
           export SANITY_API_TOKEN="$WRITE_TOKEN"
@@ -90,13 +80,12 @@ jobs:
           {
             echo "NEXT_PUBLIC_SANITY_PROJECT_ID=$NPID"
             echo "NEXT_PUBLIC_SANITY_DATASET=$NPDATASET"
-            echo "NEXT_PUBLIC_SANITY_API_VERSION=$NPAPIVER_RAW"
+            echo "NEXT_PUBLIC_SANITY_API_VERSION=$NPAPIVER"
             echo "NEXT_PUBLIC_BASE_URL=$NPBASEURL"
             echo "SANITY_API_READ_TOKEN=$READ_TOKEN"
             echo "SANITY_API_TOKEN=$WRITE_TOKEN"
           } >> "$GITHUB_ENV"
 
-          # Required checks
           : "${NEXT_PUBLIC_SANITY_PROJECT_ID:?Missing NEXT_PUBLIC_SANITY_PROJECT_ID}"
           : "${NEXT_PUBLIC_SANITY_DATASET:?Missing NEXT_PUBLIC_SANITY_DATASET}"
           : "${NEXT_PUBLIC_SANITY_API_VERSION:?Missing NEXT_PUBLIC_SANITY_API_VERSION}"
@@ -104,14 +93,20 @@ jobs:
 
           echo "Environment OK"
 
-      # Ensure next.config.js includes: output: 'standalone'
+      # Build (ensure next.config has output: 'standalone')
       - name: Build app (standalone)
         run: pnpm run build
 
+      # Package standalone artifact; hard-fail if standalone folder missing
       - name: Package standalone artifact
         shell: bash
         run: |
           set -euo pipefail
+          if [ ! -d ".next/standalone" ]; then
+            echo "ERROR: .next/standalone not found. Ensure next.config has output: 'standalone' and rebuild." >&2
+            exit 1
+          fi
+
           SHORT_SHA="${GITHUB_SHA::7}"
           echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
 
