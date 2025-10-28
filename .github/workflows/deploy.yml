@@ -10,16 +10,21 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      # Server deploy
       SSH_USER: ${{ secrets.SSH_USER }}
       SSH_HOST: ${{ secrets.SSH_HOST }}
       APP_DIR: ${{ secrets.APP_DIR }}
+
+      # Next.js
       NEXT_TELEMETRY_DISABLED: 1
 
-      # Public build envs if needed
+      # Sanity (required for build and runtime-safe client init)
       NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
       NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
       NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
-      NEXT_PUBLIC_SANITY_TOKEN: ${{ secrets.NEXT_PUBLIC_SANITY_TOKEN }}
+
+      # If you intentionally embed a public token (not recommended), uncomment:
+      # NEXT_PUBLIC_SANITY_TOKEN: ${{ secrets.NEXT_PUBLIC_SANITY_TOKEN }}
 
     steps:
       - name: Checkout repository
@@ -40,7 +45,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Persist Next.js incremental cache between CI runs
+      # Persist Next.js incremental cache between CI runs to avoid "No Cache Detected"
       - name: Cache Next.js build cache
         uses: actions/cache@v4
         with:
@@ -49,11 +54,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      # Build without --turbo to use the default production bundler
+      # Fail fast if required Sanity envs are missing
+      - name: Verify Sanity env
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${NEXT_PUBLIC_SANITY_PROJECT_ID:?Missing NEXT_PUBLIC_SANITY_PROJECT_ID}"
+          : "${NEXT_PUBLIC_SANITY_DATASET:?Missing NEXT_PUBLIC_SANITY_DATASET}"
+          : "${NEXT_PUBLIC_SANITY_API_VERSION:?Missing NEXT_PUBLIC_SANITY_API_VERSION}"
+          echo "Sanity env OK"
+
+      # Build without Turbopack flag; ensure next.config.js has: output: 'standalone'
       - name: Build app (standalone)
         run: pnpm run build
 
-      # Package standalone output for minimal server deploy
+      # Package the minimal standalone artifact
       - name: Package standalone artifact
         shell: bash
         run: |
@@ -98,7 +113,7 @@ jobs:
             tar -xzf \"/tmp/shophikes_${SHORT_SHA}.tar.gz\" -C \"\$NEW_RELEASE_DIR\"
             rm -f \"/tmp/shophikes_${SHORT_SHA}.tar.gz\"
 
-            # Atomic symlink switch to new release before reload
+            # Atomic symlink swap
             ln -sfn \"\$NEW_RELEASE_DIR\" \"\$CURRENT_LINK\"
 
             # Ensure PM2
