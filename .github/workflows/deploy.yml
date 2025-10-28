@@ -1,62 +1,67 @@
-name: Deploy Shophikes
+name: Deploy ShopHikes
 
 on:
   push:
     branches:
-      - main   # Trigger on push to main
+      - main
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout your repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Install Node.js (same version as server)
-      - name: Install Node.js
+      # 🧩 Node + pnpm setup with caching
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'pnpm'
 
-      # 3️⃣ Install pnpm (same version as server)
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
         with:
-          version: 10
+          version: 10.19.0
+          run_install: false
 
-      # 4️⃣ Install dependencies
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      # 5️⃣ Build Next.js app with turbo
+      # ⚡ Cache Next.js build output (improves rebuild speed)
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-
+
+      # 🏗️ Build the app (no --turbo for stability)
       - name: Build app
         run: pnpm run build
 
-      # 6️⃣ Deploy to Lightsail via rsync + restart PM2
-      - name: Deploy via SSH
+      # 🔐 Deploy to your Lightsail server
+      - name: Deploy to Lightsail
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          APP_DIR: ${{ secrets.APP_DIR }}
+          DEPLOY_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          USER: bitnami
         run: |
-          echo "📦 Setting up SSH..."
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "$DEPLOY_KEY" > key.pem
+          chmod 600 key.pem
 
-          echo "🚀 Syncing files to $SSH_HOST..."
-          rsync -az --delete \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            ./ $SSH_USER@$SSH_HOST:$APP_DIR
+          echo "🚀 Syncing files to Lightsail..."
+          rsync -avz --delete -e "ssh -i key.pem -o StrictHostKeyChecking=no" ./ $USER@$HOST:/opt/bitnami/apache/htdocs/Ecommerce-with-sanity/
 
           echo "🔁 Restarting PM2 app..."
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "
-            cd $APP_DIR &&
-            pnpm install --frozen-lockfile &&
-            pnpm run build --turbo &&
+          ssh -i key.pem -o StrictHostKeyChecking=no $USER@$HOST "
+            cd /opt/bitnami/apache/htdocs/Ecommerce-with-sanity &&
+            pnpm install --prod &&
             pm2 restart shophikes || pm2 start pnpm --name 'shophikes' -- start --port 3005
           "
+
+      - name: Cleanup
+        run: rm -f key.pem
