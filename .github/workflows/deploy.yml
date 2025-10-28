@@ -7,23 +7,19 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    # If your secrets are environment-scoped, uncomment and set the correct name
     # environment: production
 
     env:
-      # Public Sanity config (Repository Variables)
       NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
       NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET }}
       NEXT_PUBLIC_SANITY_API_VERSION: ${{ vars.NEXT_PUBLIC_SANITY_API_VERSION }}
       NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL }}
 
-      # Private Sanity tokens (Secrets preferred; Variables fallback)
       SANITY_API_READ_TOKEN_SEC: ${{ secrets.SANITY_API_READ_TOKEN }}
       SANITY_API_READ_TOKEN_VAR: ${{ vars.SANITY_API_READ_TOKEN }}
       SANITY_API_TOKEN_SEC: ${{ secrets.SANITY_API_TOKEN }}
       SANITY_API_TOKEN_VAR: ${{ vars.SANITY_API_TOKEN }}
 
-      # SSH (Secrets preferred; Variables fallback)
       SSH_USER_SEC: ${{ secrets.SSH_USER }}
       SSH_HOST_SEC: ${{ secrets.SSH_HOST }}
       SSH_PRIVATE_KEY_SEC: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -31,10 +27,7 @@ jobs:
       SSH_HOST_VAR: ${{ vars.SSH_HOST }}
       SSH_PRIVATE_KEY_VAR: ${{ vars.SSH_PRIVATE_KEY }}
 
-      # Deploy target directory
       APP_DIR: ${{ vars.APP_DIR }}
-
-      # Next.js
       NEXT_TELEMETRY_DISABLED: 1
 
     steps:
@@ -70,20 +63,17 @@ jobs:
           set -euo pipefail
           sanitize() { v="$1"; v="${v%\"}"; v="${v#\"}"; printf '%s' "$v"; }
 
-          # Public Sanity config (with apiVersion fallback)
           NPID="$(sanitize "${NEXT_PUBLIC_SANITY_PROJECT_ID:-}")"
           NPDATASET="$(sanitize "${NEXT_PUBLIC_SANITY_DATASET:-}")"
           NPAPIVER="$(sanitize "${NEXT_PUBLIC_SANITY_API_VERSION:-}")"
           if [ -z "$NPAPIVER" ]; then NPAPIVER="2025-10-28"; fi
           NPBASEURL="$(sanitize "${NEXT_PUBLIC_BASE_URL:-}")"
 
-          # Private tokens: prefer secrets, fallback to variables
           READ_TOKEN="$(sanitize "${SANITY_API_READ_TOKEN_SEC:-}")"
           if [ -z "$READ_TOKEN" ]; then READ_TOKEN="$(sanitize "${SANITY_API_READ_TOKEN_VAR:-}")"; fi
           WRITE_TOKEN="$(sanitize "${SANITY_API_TOKEN_SEC:-}")"
           if [ -z "$WRITE_TOKEN" ]; then WRITE_TOKEN="$(sanitize "${SANITY_API_TOKEN_VAR:-}")"; fi
 
-          # SSH: prefer secrets, fallback to variables
           DEPLOY_SSH_USER="$(sanitize "${SSH_USER_SEC:-}")"
           if [ -z "$DEPLOY_SSH_USER" ]; then DEPLOY_SSH_USER="$(sanitize "${SSH_USER_VAR:-}")"; fi
           DEPLOY_SSH_HOST="$(sanitize "${SSH_HOST_SEC:-}")"
@@ -91,13 +81,11 @@ jobs:
           RAW_KEY="$(sanitize "${SSH_PRIVATE_KEY_SEC:-}")"
           if [ -z "$RAW_KEY" ]; then RAW_KEY="$(sanitize "${SSH_PRIVATE_KEY_VAR:-}")"; fi
 
-          # Write private key to a temp file, fix CRLF -> LF, lock perms
           SSH_KEY_FILE="$RUNNER_TEMP/id_rsa"
           printf '%s\n' "$RAW_KEY" > "$SSH_KEY_FILE"
           sed -i 's/\r$//' "$SSH_KEY_FILE"
           chmod 600 "$SSH_KEY_FILE"
 
-          # Persist for later steps
           {
             echo "NEXT_PUBLIC_SANITY_PROJECT_ID=$NPID"
             echo "NEXT_PUBLIC_SANITY_DATASET=$NPDATASET"
@@ -110,12 +98,6 @@ jobs:
             echo "SSH_KEY_FILE=$SSH_KEY_FILE"
           } >> "$GITHUB_ENV"
 
-          # Diagnostics (masked lengths) for troubleshooting
-          echo "Diag: PID=${#NPID}, DATASET=${#NPDATASET}, API_VER=$NPAPIVER" >&2
-          echo "Diag: READ_TOKEN_LEN=${#READ_TOKEN}, WRITE_TOKEN_LEN=${#WRITE_TOKEN}" >&2
-          echo "Diag: SSH_USER=$DEPLOY_SSH_USER, SSH_HOST=$DEPLOY_SSH_HOST, KEY_BYTES=$(wc -c < "$SSH_KEY_FILE")" >&2
-
-          # Required checks
           : "${NPID:?Missing NEXT_PUBLIC_SANITY_PROJECT_ID}"
           : "${NPDATASET:?Missing NEXT_PUBLIC_SANITY_DATASET}"
           : "${NPAPIVER:?Missing NEXT_PUBLIC_SANITY_API_VERSION}"
@@ -131,17 +113,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ ! -d ".next/standalone" ]; then
-            echo "ERROR: .next/standalone not found; set output: 'standalone' in next.config and rebuild." >&2
+          if [ ! -f ".next/standalone/server.js" ]; then
+            echo "ERROR: Missing .next/standalone/server.js; ensure output: 'standalone' is set and rebuild." >&2
             exit 1
           fi
           SHORT_SHA="${GITHUB_SHA::7}"
           echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
-          rm -rf out && mkdir -p out/server/.next
-          cp -r .next/standalone/* out/server/
-          cp -r .next/static out/server/.next/static
-          if [ -d public ]; then cp -r public out/server/public; fi
-          tar -C out -czf "shophikes_${SHORT_SHA}.tar.gz" .
+          rm -rf out && mkdir -p out
+          cp -r .next/standalone out/standalone
+          cp -r .next/static out/standalone/.next/static
+          if [ -d public ]; then cp -r public out/standalone/public; fi
+          tar -C out -czf "shophikes_${SHORT_SHA}.tar.gz" standalone
 
       - name: Setup SSH and smoke test
         shell: bash
@@ -150,7 +132,6 @@ jobs:
           mkdir -p ~/.ssh
           install -m 600 "$SSH_KEY_FILE" ~/.ssh/id_rsa
           ssh-keyscan -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts
-          # Verify key works before deploy
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=yes -o BatchMode=yes ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST} true
 
       - name: Upload artifact
@@ -181,13 +162,12 @@ jobs:
             export PORT=${PORT}
             export NODE_ENV=${NODE_ENV}
 
-            APP_SERVER_DIR=\"\$CURRENT_LINK/server\"
-            APP_ENTRY=\"\$APP_SERVER_DIR/server.js\"
+            APP_ENTRY=\"\$CURRENT_LINK/standalone/server.js\"
 
             if pm2 describe shophikes >/dev/null 2>&1; then
               pm2 reload shophikes --update-env
             else
-              pm2 start \"\$APP_ENTRY\" --name shophikes --cwd \"\$APP_SERVER_DIR\" -i 1
+              pm2 start \"\$APP_ENTRY\" --name shophikes --cwd \"\$CURRENT_LINK\" -i 1
             fi
 
             pm2 save
