@@ -1,4 +1,4 @@
-name: Deploy ShopHikes
+name: Deploy ShopHikes to Lightsail
 
 on:
   push:
@@ -9,13 +9,23 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      APP_DIR: ${{ secrets.APP_DIR }}
+      NEXT_TELEMETRY_DISABLED: 1
+
+      # Public build envs if needed
+      NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+      NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+      NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
+      NEXT_PUBLIC_SANITY_TOKEN: ${{ secrets.NEXT_PUBLIC_SANITY_TOKEN }}
+
     steps:
-      # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js and pnpm properly
-      - name: Setup Node.js with pnpm
+      - name: Setup PNPM
         uses: pnpm/action-setup@v4
         with:
           version: 10.19.0
@@ -27,41 +37,87 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 4️⃣ Build the Next.js app
-      - name: Build Next.js app
-        env:
-          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
-          NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
-          NEXT_PUBLIC_SANITY_API_VERSION: ${{ secrets.NEXT_PUBLIC_SANITY_API_VERSION }}
-          NEXT_PUBLIC_SANITY_TOKEN: ${{ secrets.NEXT_PUBLIC_SANITY_TOKEN }}
-        run: pnpm run build --turbo
+      # Persist Next.js incremental cache between CI runs
+      - name: Cache Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**/*.[jt]s', '**/*.[jt]sx', 'next.config.*', 'tsconfig.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      # 5️⃣ Deploy to your Lightsail instance via rsync
-      - name: Deploy to Lightsail
-        env:
-          DEPLOY_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          HOST: ${{ secrets.LIGHTSAIL_HOST }}
-          USER: bitnami
+      # Build with Webpack to avoid Turbopack production crash
+      - name: Build app (webpack, standalone)
+        run: pnpm exec next build --webpack
+
+      # Package standalone output for minimal server deploy
+      - name: Package standalone artifact
+        shell: bash
         run: |
-          echo "$DEPLOY_KEY" > key.pem
-          chmod 600 key.pem
+          set -euo pipefail
+          SHORT_SHA="${GITHUB_SHA::7}"
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
 
-          echo "🚀 Syncing files to Lightsail..."
-          rsync -avz --delete -e "ssh -i key.pem -o StrictHostKeyChecking=no" ./ $USER@$HOST:/opt/bitnami/apache/htdocs/Ecommerce-with-sanity/
+          rm -rf out && mkdir -p out/server/.next
+          cp -r .next/standalone/* out/server/
+          cp -r .next/static out/server/.next/static
+          if [ -d public ]; then cp -r public out/server/public; fi
 
-          echo "🔁 Restarting PM2 app..."
-          ssh -i key.pem -o StrictHostKeyChecking=no $USER@$HOST "
-            cd /opt/bitnami/apache/htdocs/Ecommerce-with-sanity &&
-            corepack enable &&
-            corepack prepare pnpm@10.19.0 --activate &&
-            pnpm install --prod &&
-            pm2 restart shophikes || pm2 start pnpm --name 'shophikes' -- start --port 3005
+          tar -C out -czf "shophikes_${SHORT_SHA}.tar.gz" .
+
+      - name: Setup SSH
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload artifact
+        run: scp -i ~/.ssh/id_rsa "shophikes_${SHORT_SHA}.tar.gz" ${SSH_USER}@${SSH_HOST}:/tmp/
+
+      - name: Activate release and zero-downtime reload
+        env:
+          PORT: 3005
+          NODE_ENV: production
+        run: |
+          ssh -i ~/.ssh/id_rsa ${SSH_USER}@${SSH_HOST} "
+            set -euo pipefail
+
+            RELEASES_DIR=\"${APP_DIR}/releases\"
+            CURRENT_LINK=\"${APP_DIR}/current\"
+            NEW_RELEASE_DIR=\"\$RELEASES_DIR/${SHORT_SHA}\"
+
+            mkdir -p \"\$RELEASES_DIR\" \"${APP_DIR}/logs\"
+            rm -rf \"\$NEW_RELEASE_DIR\"
+            mkdir -p \"\$NEW_RELEASE_DIR\"
+
+            tar -xzf \"/tmp/shophikes_${SHORT_SHA}.tar.gz\" -C \"\$NEW_RELEASE_DIR\"
+            rm -f \"/tmp/shophikes_${SHORT_SHA}.tar.gz\"
+
+            # Atomic symlink switch to new release before reload
+            ln -sfn \"\$NEW_RELEASE_DIR\" \"\$CURRENT_LINK\"
+
+            # Ensure PM2
+            if ! command -v pm2 >/dev/null 2>&1; then
+              npm i -g pm2
+            fi
+
+            export PORT=${PORT}
+            export NODE_ENV=${NODE_ENV}
+
+            APP_SERVER_DIR=\"\$CURRENT_LINK/server\"
+            APP_ENTRY=\"\$APP_SERVER_DIR/server.js\"
+
+            # Start once, then reload for zero downtime
+            if pm2 describe shophikes >/dev/null 2>&1; then
+              pm2 reload shophikes --update-env
+            else
+              pm2 start \"\$APP_ENTRY\" --name shophikes --cwd \"\$APP_SERVER_DIR\" -i 1
+            fi
+
+            pm2 save
           "
-
-      # 6️⃣ Cleanup
-      - name: Cleanup
-        run: rm -f key.pem
