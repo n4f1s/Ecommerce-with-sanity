@@ -27,7 +27,7 @@ jobs:
       SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
       SANITY_API_READ_TOKEN: ${{ secrets.SANITY_API_READ_TOKEN }}
 
-      # Other app vars as needed (vars.* or secrets.*)
+      # Optional public base URL (Repository Variables)
       NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL }}
 
     steps:
@@ -49,7 +49,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # CI build caching to remove "No Cache Detected" and speed up rebuilds
       - name: Cache Next.js build cache
         uses: actions/cache@v4
         with:
@@ -58,35 +57,47 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      # Normalize public vars (strip surrounding quotes) and ensure apiVersion fallback
+      # Normalize repo variables, set fallback apiVersion, and export for THIS step and next ones
       - name: Normalize/verify Sanity env
         shell: bash
         run: |
           set -euo pipefail
 
-          # Strip accidental quotes from repo variables
-          for k in NEXT_PUBLIC_SANITY_PROJECT_ID NEXT_PUBLIC_SANITY_DATASET NEXT_PUBLIC_SANITY_API_VERSION NEXT_PUBLIC_BASE_URL; do
-            v="${!k:-}"; v="${v%\"}"; v="${v#\"}"
-            echo "$k=$v" >> "$GITHUB_ENV"
-          done
+          # Strip accidental surrounding quotes
+          sanitize() { v="$1"; v="${v%\"}"; v="${v#\"}"; printf '%s' "$v"; }
 
-          # Provide a safe default apiVersion if missing
-          if [ -z "${NEXT_PUBLIC_SANITY_API_VERSION:-}" ]; then
-            echo "NEXT_PUBLIC_SANITY_API_VERSION=2025-10-28" >> "$GITHUB_ENV"
-          fi
+          NPID="$(sanitize "${NEXT_PUBLIC_SANITY_PROJECT_ID:-}")"
+          NPDATASET="$(sanitize "${NEXT_PUBLIC_SANITY_DATASET:-}")"
+          NPBASEURL="$(sanitize "${NEXT_PUBLIC_BASE_URL:-}")"
+          # Fallback apiVersion if missing
+          NPAPIVER="$(sanitize "${NEXT_PUBLIC_SANITY_API_VERSION:-}")"
+          if [ -z "$NPAPIVER" ]; then NPAPIVER="2025-10-28"; fi
 
-          # Fail fast if still missing projectId or dataset
+          # Export for current step
+          export NEXT_PUBLIC_SANITY_PROJECT_ID="$NPID"
+          export NEXT_PUBLIC_SANITY_DATASET="$NPDATASET"
+          export NEXT_PUBLIC_SANITY_API_VERSION="$NPAPIVER"
+          export NEXT_PUBLIC_BASE_URL="$NPBASEURL"
+
+          # Persist for subsequent steps
+          {
+            echo "NEXT_PUBLIC_SANITY_PROJECT_ID=$NPID"
+            echo "NEXT_PUBLIC_SANITY_DATASET=$NPDATASET"
+            echo "NEXT_PUBLIC_SANITY_API_VERSION=$NPAPIVER"
+            echo "NEXT_PUBLIC_BASE_URL=$NPBASEURL"
+          } >> "$GITHUB_ENV"
+
+          # Fail fast if still missing required fields
           : "${NEXT_PUBLIC_SANITY_PROJECT_ID:?Missing NEXT_PUBLIC_SANITY_PROJECT_ID}"
           : "${NEXT_PUBLIC_SANITY_DATASET:?Missing NEXT_PUBLIC_SANITY_DATASET}"
           : "${NEXT_PUBLIC_SANITY_API_VERSION:?Missing NEXT_PUBLIC_SANITY_API_VERSION}"
+
           echo "Sanity env OK"
 
-      # Build without --turbo to use the stable production bundler
-      # Ensure next.config.js includes: output: 'standalone'
+      # Ensure next.config.js has: output: 'standalone'
       - name: Build app (standalone)
         run: pnpm run build
 
-      # Package minimal standalone artifact
       - name: Package standalone artifact
         shell: bash
         run: |
@@ -131,10 +142,8 @@ jobs:
             tar -xzf \"/tmp/shophikes_${SHORT_SHA}.tar.gz\" -C \"\$NEW_RELEASE_DIR\"
             rm -f \"/tmp/shophikes_${SHORT_SHA}.tar.gz\"
 
-            # Atomic symlink swap
             ln -sfn \"\$NEW_RELEASE_DIR\" \"\$CURRENT_LINK\"
 
-            # Ensure PM2
             if ! command -v pm2 >/dev/null 2>&1; then
               npm i -g pm2
             fi
@@ -145,7 +154,6 @@ jobs:
             APP_SERVER_DIR=\"\$CURRENT_LINK/server\"
             APP_ENTRY=\"\$APP_SERVER_DIR/server.js\"
 
-            # Start once, then reload for zero downtime
             if pm2 describe shophikes >/dev/null 2>&1; then
               pm2 reload shophikes --update-env
             else
