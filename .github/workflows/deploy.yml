@@ -1,18 +1,21 @@
-name: Deploy to Lightsail
+name: Deploy Shophikes to Lightsail
 
 on:
   push:
     branches:
-      - main   # or 'master' if that's your default branch
+      - main
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # --- 1️⃣ Checkout code ---
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # --- 2️⃣ Setup Node + pnpm ---
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -22,23 +25,42 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
+      # --- 3️⃣ Install & Build (Turbo mode) ---
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Next.js app
-        run: pnpm run build
+      - name: Build Next.js (Turbo mode)
+        run: pnpm run build --turbo
 
-      - name: Deploy to Lightsail via SSH
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: ".next public package.json pnpm-lock.yaml"
-          target: "${{ secrets.APP_DIR }}"
-          strip_components: 0
+      # --- 4️⃣ Install rsync for deploy ---
+      - name: Install rsync
+        run: sudo apt-get update && sudo apt-get install -y rsync
 
-      - name: Restart PM2
+      # --- 5️⃣ Rsync deploy ---
+      - name: Rsync deployment to Lightsail
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          APP_DIR: ${{ secrets.APP_DIR }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          echo "🚀 Deploying to $SSH_HOST ..."
+          rsync -avz --delete \
+            -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude '.env*' \
+            --exclude '.next/cache' \
+            ./ $SSH_USER@$SSH_HOST:$APP_DIR
+
+          echo "✅ Rsync completed successfully."
+          rm -f private_key.pem
+
+      # --- 6️⃣ Restart PM2 using pnpm (port 3005) ---
+      - name: Restart PM2 (pnpm + port 3005)
         uses: appleboy/ssh-action@v1.1.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -46,5 +68,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ${{ secrets.APP_DIR }}
-            pnpm install --prod
-            pm2 restart shophikes || pm2 start npm --name "shophikes" -- start
+            pnpm install --prod --frozen-lockfile
+            echo "🔁 Restarting PM2 process (port 3005)..."
+            pm2 describe shophikes > /dev/null
+            if [ $? -eq 0 ]; then
+              pm2 restart shophikes
+            else
+              pm2 start "pnpm start -- -p 3005" --name "shophikes"
+            fi
+            pm2 save
+            echo "✅ Shophikes running on port 3005."
