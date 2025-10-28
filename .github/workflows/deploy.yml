@@ -32,7 +32,7 @@ jobs:
 
       # 5️⃣ Build Next.js app with turbo
       - name: Build app
-        run: pnpm run build --turbo
+        run: pnpm run build
 
       # 6️⃣ Deploy to Lightsail via rsync + restart PM2
       - name: Deploy via SSH
