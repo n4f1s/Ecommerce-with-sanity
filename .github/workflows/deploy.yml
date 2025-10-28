@@ -10,29 +10,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout code
+      # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js (v20)
+      # 2️⃣ Setup Node.js and pnpm properly
+      - name: Setup Node.js with pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.19.0
+          run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      # 3️⃣ Install pnpm globally and verify
-      - name: Install pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.19.0 --activate
-          pnpm -v
-
-      # 4️⃣ Install dependencies
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 5️⃣ Build app with your environment variables
+      # 4️⃣ Build the Next.js app
       - name: Build Next.js app
         env:
           NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
@@ -41,7 +40,7 @@ jobs:
           NEXT_PUBLIC_SANITY_TOKEN: ${{ secrets.NEXT_PUBLIC_SANITY_TOKEN }}
         run: pnpm run build --turbo
 
-      # 6️⃣ Deploy to your Lightsail server via rsync
+      # 5️⃣ Deploy to your Lightsail instance via rsync
       - name: Deploy to Lightsail
         env:
           DEPLOY_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
@@ -63,6 +62,6 @@ jobs:
             pm2 restart shophikes || pm2 start pnpm --name 'shophikes' -- start --port 3005
           "
 
-      # 7️⃣ Cleanup SSH key
+      # 6️⃣ Cleanup
       - name: Cleanup
         run: rm -f key.pem
