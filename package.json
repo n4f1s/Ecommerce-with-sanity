@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3005",
     "lint": "eslint",
     "typegen": "sanity schema extract --path=./schema.json && sanity typegen generate --path=./schema.json --output=./sanity.types.ts",
     "generate-locations": "node scripts/generate-locations.js"
