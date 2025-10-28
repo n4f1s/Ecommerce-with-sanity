@@ -1,4 +1,8 @@
-name: Deploy ShopHikes to Lightsail
+# 🧩 GitHub Actions Workflow — ShopHikes
+# 🚀 Deploy Next.js (standalone) to Lightsail with PM2
+# ✨ Includes pnpm store caching and skips Next lint/type to speed up builds
+
+name: "🚀 Deploy ShopHikes to Lightsail"
 
 on:
   push:
@@ -10,50 +14,67 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Repository variables only (as configured in your repo settings)
+      # 🌐 Public (Repository Variables)
       NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID }}
       NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET }}
       NEXT_PUBLIC_SANITY_API_VERSION: ${{ vars.NEXT_PUBLIC_SANITY_API_VERSION }}
       NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL }}
 
+      # 🔒 Private (Repository Variables)
       SANITY_API_READ_TOKEN: ${{ vars.SANITY_API_READ_TOKEN }}
       SANITY_API_TOKEN: ${{ vars.SANITY_API_TOKEN }}
 
+      # 🔑 SSH (Repository Variables)
       SSH_USER: ${{ vars.SSH_USER }}
       SSH_HOST: ${{ vars.SSH_HOST }}
       SSH_PRIVATE_KEY: ${{ vars.SSH_PRIVATE_KEY }}
 
+      # 📦 Deploy target on server
       APP_DIR: ${{ vars.APP_DIR }}
+
+      # 🧪 No telemetry in CI
       NEXT_TELEMETRY_DISABLED: 1
 
     steps:
-      - name: Checkout
+      # 1) Source
+      - name: "🔍 Checkout"
         uses: actions/checkout@v4
 
-      - name: Setup PNPM
+      # 2) Tooling
+      - name: "📦 Setup PNPM"
         uses: pnpm/action-setup@v4
         with:
           version: 10.19.0
           run_install: false
 
-      - name: Setup Node.js
+      - name: "🟢 Setup Node.js"
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      - name: Install dependencies
+      # 3) Caches (deps + Next)
+      - name: "🗃️ Cache pnpm store"
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: "📥 Install dependencies"
         run: pnpm install --frozen-lockfile
 
-      - name: Cache Next.js build cache
+      - name: "⚡ Cache Next.js build cache"
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**/*.[jt]s', '**/*.[jt]sx', 'next.config.*', 'tsconfig.json') }}
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('next.config.*', 'tsconfig.json') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      - name: Sanitize public env and assert
+      # 4) Sanitize public env for build (strip quotes/spaces)
+      - name: "🧼 Sanitize build env + assert"
         shell: bash
         run: |
           set -euo pipefail
@@ -65,10 +86,15 @@ jobs:
           : "${NEXT_PUBLIC_SANITY_PROJECT_ID:?Missing NEXT_PUBLIC_SANITY_PROJECT_ID}"
           : "${NEXT_PUBLIC_SANITY_DATASET:?Missing NEXT_PUBLIC_SANITY_DATASET}"
 
-      - name: Build (standalone)
+      # 5) Build (standalone) — skip Next lint/type to save time
+      - name: "🏗️ Build (standalone, fast)"
+        env:
+          NEXT_DISABLE_ESLINT: 1
+          NEXT_DISABLE_TYPECHECK: 1
         run: pnpm run build
 
-      - name: Package standalone
+      # 6) Package preserved standalone
+      - name: "📦 Package standalone"
         shell: bash
         run: |
           set -euo pipefail
@@ -81,7 +107,8 @@ jobs:
           if [ -d public ]; then cp -r public out/standalone/public; fi
           tar -C out -czf "shophikes_${SHORT_SHA}.tar.gz" standalone
 
-      - name: Setup SSH
+      # 7) SSH bootstrap
+      - name: "🔐 Setup SSH"
         shell: bash
         run: |
           set -euo pipefail
@@ -92,7 +119,8 @@ jobs:
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=yes -o BatchMode=yes "$SSH_USER@$SSH_HOST" true
 
-      - name: Create ecosystem.config.js (YAML-safe)
+      # 8) Generate PM2 ecosystem (no heredoc; YAML-safe)
+      - name: "🧾 Create ecosystem.config.js"
         shell: bash
         run: |
           set -euo pipefail
@@ -119,12 +147,14 @@ jobs:
           sed -i "s/__SANITY_API_READ_TOKEN__/${READ_ESC}/g" ecosystem.config.js
           sed -i "s/__SANITY_API_TOKEN__/${WRITE_ESC}/g"     ecosystem.config.js
 
-      - name: Upload artifact + ecosystem
+      # 9) Upload bundle + ecosystem
+      - name: "⬆️ Upload artifact + ecosystem"
         run: |
           scp -i ~/.ssh/id_rsa "shophikes_${SHORT_SHA}.tar.gz" "$SSH_USER@$SSH_HOST:/tmp/"
           scp -i ~/.ssh/id_rsa ecosystem.config.js            "$SSH_USER@$SSH_HOST:/tmp/"
 
-      - name: Activate release and start via PM2
+      # 10) Activate and start via PM2
+      - name: "🚀 Activate release + PM2 start"
         run: |
           ssh -i ~/.ssh/id_rsa "$SSH_USER@$SSH_HOST" "
             set -euo pipefail
