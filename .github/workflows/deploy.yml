@@ -7,6 +7,8 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Uncomment this if your tokens are saved under an environment (e.g., "production")
+    # environment: production
 
     env:
       # Public Sanity config (Repository Variables)
@@ -21,15 +23,15 @@ jobs:
       SANITY_API_TOKEN_SEC: ${{ secrets.SANITY_API_TOKEN }}
       SANITY_API_TOKEN_VAR: ${{ vars.SANITY_API_TOKEN }}
 
-      # Deploy targets (provide both contexts; coalesce in a step)
+      # SSH (Secrets preferred; Variables fallback)
       SSH_USER_SEC: ${{ secrets.SSH_USER }}
       SSH_HOST_SEC: ${{ secrets.SSH_HOST }}
       SSH_PRIVATE_KEY_SEC: ${{ secrets.SSH_PRIVATE_KEY }}
       SSH_USER_VAR: ${{ vars.SSH_USER }}
       SSH_HOST_VAR: ${{ vars.SSH_HOST }}
       SSH_PRIVATE_KEY_VAR: ${{ vars.SSH_PRIVATE_KEY }}
-      APP_DIR: ${{ vars.APP_DIR }}
 
+      APP_DIR: ${{ vars.APP_DIR }}
       NEXT_TELEMETRY_DISABLED: 1
 
     steps:
@@ -58,37 +60,35 @@ jobs:
           key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**/*.[jt]s', '**/*.[jt]sx', 'next.config.*', 'tsconfig.json') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
-      # Normalize env, set fallbacks, and persist to GITHUB_ENV
-      - name: Normalize/verify environment
+
+      - name: Normalize, coalesce, and verify env
         shell: bash
         run: |
           set -euo pipefail
           sanitize() { v="$1"; v="${v%\"}"; v="${v#\"}"; printf '%s' "$v"; }
 
-          # Public Sanity config with default apiVersion
+          # Public config (with apiVersion fallback)
           NPID="$(sanitize "${NEXT_PUBLIC_SANITY_PROJECT_ID:-}")"
           NPDATASET="$(sanitize "${NEXT_PUBLIC_SANITY_DATASET:-}")"
           NPAPIVER="$(sanitize "${NEXT_PUBLIC_SANITY_API_VERSION:-}")"
           if [ -z "$NPAPIVER" ]; then NPAPIVER="2025-10-28"; fi
           NPBASEURL="$(sanitize "${NEXT_PUBLIC_BASE_URL:-}")"
 
-          # Tokens: prefer secrets, fallback to variables
+          # Tokens: prefer secrets, then variables
           READ_TOKEN="$(sanitize "${SANITY_API_READ_TOKEN_SEC:-}")"
           if [ -z "$READ_TOKEN" ]; then READ_TOKEN="$(sanitize "${SANITY_API_READ_TOKEN_VAR:-}")"; fi
           WRITE_TOKEN="$(sanitize "${SANITY_API_TOKEN_SEC:-}")"
           if [ -z "$WRITE_TOKEN" ]; then WRITE_TOKEN="$(sanitize "${SANITY_API_TOKEN_VAR:-}")"; fi
 
-          # SSH: prefer secrets, fallback to variables, then fail if missing
+          # SSH: prefer secrets, then variables
           DEPLOY_SSH_USER="$(sanitize "${SSH_USER_SEC:-}")"
           if [ -z "$DEPLOY_SSH_USER" ]; then DEPLOY_SSH_USER="$(sanitize "${SSH_USER_VAR:-}")"; fi
-
           DEPLOY_SSH_HOST="$(sanitize "${SSH_HOST_SEC:-}")"
           if [ -z "$DEPLOY_SSH_HOST" ]; then DEPLOY_SSH_HOST="$(sanitize "${SSH_HOST_VAR:-}")"; fi
-
           DEPLOY_SSH_KEY="$(sanitize "${SSH_PRIVATE_KEY_SEC:-}")"
           if [ -z "$DEPLOY_SSH_KEY" ]; then DEPLOY_SSH_KEY="$(sanitize "${SSH_PRIVATE_KEY_VAR:-}")"; fi
 
-          # Persist for subsequent steps
+          # Persist for next steps (GITHUB_ENV)
           {
             echo "NEXT_PUBLIC_SANITY_PROJECT_ID=$NPID"
             echo "NEXT_PUBLIC_SANITY_DATASET=$NPDATASET"
@@ -103,16 +103,20 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_ENV"
 
-          # Required checks
-          : "${NEXT_PUBLIC_SANITY_PROJECT_ID:?Missing NEXT_PUBLIC_SANITY_PROJECT_ID}"
-          : "${NEXT_PUBLIC_SANITY_DATASET:?Missing NEXT_PUBLIC_SANITY_DATASET}"
-          : "${NEXT_PUBLIC_SANITY_API_VERSION:?Missing NEXT_PUBLIC_SANITY_API_VERSION}"
-          : "${SANITY_API_READ_TOKEN:?Missing SANITY_API_READ_TOKEN}"
-          : "${DEPLOY_SSH_USER:?Missing SSH_USER (secret or variable)}"
-          : "${DEPLOY_SSH_HOST:?Missing SSH_HOST (secret or variable)}"
-          : "${DEPLOY_SSH_KEY:?Missing SSH_PRIVATE_KEY (secret or variable)}"
+          # Diagnostics (masked values) to prove presence
+          echo "Diag: PID=${#NPID} chars, DATASET=${#NPDATASET} chars, API_VER=${NPAPIVER}" >&2
+          echo "Diag: READ_TOKEN=${#READ_TOKEN} chars, WRITE_TOKEN=${#WRITE_TOKEN} chars" >&2
+          echo "Diag: SSH_USER=${DEPLOY_SSH_USER}, SSH_HOST=${DEPLOY_SSH_HOST}, KEY_LEN=${#DEPLOY_SSH_KEY} chars" >&2
 
-      # Build (ensure next.config sets output: 'standalone')
+          # Required checks (fail fast)
+          : "${NPID:?Missing NEXT_PUBLIC_SANITY_PROJECT_ID}"
+          : "${NPDATASET:?Missing NEXT_PUBLIC_SANITY_DATASET}"
+          : "${NPAPIVER:?Missing NEXT_PUBLIC_SANITY_API_VERSION}"
+          : "${READ_TOKEN:?Missing SANITY_API_READ_TOKEN}"
+          : "${DEPLOY_SSH_USER:?Missing SSH_USER}"
+          : "${DEPLOY_SSH_HOST:?Missing SSH_HOST}"
+          : "${DEPLOY_SSH_KEY:?Missing SSH_PRIVATE_KEY}"
+
       - name: Build app (standalone)
         run: pnpm run build
 
@@ -137,7 +141,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
-          # Read multi-line key from GITHUB_ENV
           awk 'f{print} /^DEPLOY_SSH_KEY<<EOF$/{f=1;next} /^EOF$/{exit}' "$GITHUB_ENV" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$DEPLOY_SSH_HOST" >> ~/.ssh/known_hosts
@@ -156,21 +159,12 @@ jobs:
             CURRENT_LINK=\"${APP_DIR}/current\"
             NEW_RELEASE_DIR=\"\$RELEASES_DIR/${SHORT_SHA}\"
             mkdir -p \"\$RELEASES_DIR\" \"${APP_DIR}/logs\"
-            rm -rf \"\$NEW_RELEASE_DIR\"
-            mkdir -p \"\$NEW_RELEASE_DIR\"
-            tar -xzf \"/tmp/shophikes_${SHORT_SHA}.tar.gz\" -C \"\$NEW_RELEASE_DIR\"
-            rm -f \"/tmp/shophikes_${SHORT_SHA}.tar.gz\"
+            rm -rf \"\$NEW_RELEASE_DIR\" && mkdir -p \"\$NEW_RELEASE_DIR\"
+            tar -xzf \"/tmp/shophikes_${SHORT_SHA}.tar.gz\" -C \"\$NEW_RELEASE_DIR\" && rm -f \"/tmp/shophikes_${SHORT_SHA}.tar.gz\"
             ln -sfn \"\$NEW_RELEASE_DIR\" \"\$CURRENT_LINK\"
             if ! command -v pm2 >/dev/null 2>&1; then npm i -g pm2; fi
-            export PORT=${PORT}
-            export NODE_ENV=${NODE_ENV}
-            APP_SERVER_DIR=\"\$CURRENT_LINK/server\"
-            APP_ENTRY=\"\$APP_SERVER_DIR/server.js\"
-            if pm2 describe shophikes >/dev/null 2>&1; then
-              pm2 reload shophikes --update-env
-            else
-              pm2 start \"\$APP_ENTRY\" --name shophikes --cwd \"\$APP_SERVER_DIR\" -i 1
-            fi
+            export PORT=${PORT}; export NODE_ENV=${NODE_ENV}
+            APP_SERVER_DIR=\"\$CURRENT_LINK/server\"; APP_ENTRY=\"\$APP_SERVER_DIR/server.js\"
+            if pm2 describe shophikes >/dev/null 2>&1; then pm2 reload shophikes --update-env; else pm2 start \"\$APP_ENTRY\" --name shophikes --cwd \"\$APP_SERVER_DIR\" -i 1; fi
             pm2 save
           "
-
