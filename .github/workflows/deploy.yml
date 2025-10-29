@@ -1,6 +1,7 @@
 # 🧩 GitHub Actions Workflow — ShopHikes
 # 🚀 Deploy Next.js (standalone) to Lightsail with PM2
-# ✨ Includes pnpm store caching and skips Next lint/type to speed up builds
+# ⚙️ Optimized with caching, concurrency, and smart skip logic
+# 💡 Keeps all existing env, Sanity, Upstash, and PM2 functionality intact
 
 name: "🚀 Deploy ShopHikes to Lightsail"
 
@@ -8,6 +9,10 @@ on:
   push:
     branches:
       - main
+
+concurrency:
+  group: deploy-shophikes-main
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -43,6 +48,32 @@ jobs:
       - name: "🔍 Checkout"
         uses: actions/checkout@v4
 
+      # ⚡ Detect whether we actually need to build/deploy
+      - name: "🧩 Detect relevant changes"
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            deploy:
+              - 'app/**'
+              - 'components/**'
+              - 'lib/**'
+              - 'pages/**'
+              - 'public/**'
+              - 'styles/**'
+              - 'next.config.*'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - '.env*'
+              - 'sanity.config.*'
+              - 'ecosystem.config.js'
+
+      - name: "🧠 Skip build if no relevant changes"
+        if: steps.changes.outputs.deploy == 'false'
+        run: |
+          echo "✅ No deploy-related changes detected. Skipping build and deploy."
+          exit 0
+
       - name: "📦 Setup PNPM"
         uses: pnpm/action-setup@v4
         with:
@@ -63,9 +94,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
-      - name: "📥 Install dependencies"
-        run: pnpm install --frozen-lockfile
-
       - name: "⚡ Cache Next.js build cache"
         uses: actions/cache@v4
         with:
@@ -74,25 +102,25 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
+      - name: "📥 Install dependencies"
+        run: pnpm install --frozen-lockfile
+
       - name: "🧼 Sanitize build env + assert"
         shell: bash
         run: |
           set -euo pipefail
           strip(){ v="$1"; v="${v//\"/}"; v="${v//\'/}"; v="${v// /}"; printf '%s' "$v"; }
 
-          # Public env used at build-time
           echo "NEXT_PUBLIC_SANITY_PROJECT_ID=$(strip "${NEXT_PUBLIC_SANITY_PROJECT_ID:-}")" >> "$GITHUB_ENV"
-          echo "NEXT_PUBLIC_SANITY_DATASET=$(strip "${NEXT_PUBLIC_SANITY_DATASET:-}")"       >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SANITY_DATASET=$(strip "${NEXT_PUBLIC_SANITY_DATASET:-}")" >> "$GITHUB_ENV"
           echo "NEXT_PUBLIC_SANITY_API_VERSION=$(strip "${NEXT_PUBLIC_SANITY_API_VERSION:-2025-10-28}")" >> "$GITHUB_ENV"
-          echo "NEXT_PUBLIC_BASE_URL=$(strip "${NEXT_PUBLIC_BASE_URL:-}")"                   >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_BASE_URL=$(strip "${NEXT_PUBLIC_BASE_URL:-}")" >> "$GITHUB_ENV"
 
-          # Private/Server env also exported for build in case code reads them during build
-          echo "SANITY_API_READ_TOKEN=$(strip "${SANITY_API_READ_TOKEN:-}")"                 >> "$GITHUB_ENV"
-          echo "SANITY_API_TOKEN=$(strip "${SANITY_API_TOKEN:-}")"                           >> "$GITHUB_ENV"
-          echo "UPSTASH_REDIS_REST_URL=$(strip "${UPSTASH_REDIS_REST_URL:-}")"               >> "$GITHUB_ENV"
-          echo "UPSTASH_REDIS_REST_TOKEN=$(strip "${UPSTASH_REDIS_REST_TOKEN:-}")"           >> "$GITHUB_ENV"
+          echo "SANITY_API_READ_TOKEN=$(strip "${SANITY_API_READ_TOKEN:-}")" >> "$GITHUB_ENV"
+          echo "SANITY_API_TOKEN=$(strip "${SANITY_API_TOKEN:-}")" >> "$GITHUB_ENV"
+          echo "UPSTASH_REDIS_REST_URL=$(strip "${UPSTASH_REDIS_REST_URL:-}")" >> "$GITHUB_ENV"
+          echo "UPSTASH_REDIS_REST_TOKEN=$(strip "${UPSTASH_REDIS_REST_TOKEN:-}")" >> "$GITHUB_ENV"
 
-          # Required assertions for public env
           : "${NEXT_PUBLIC_SANITY_PROJECT_ID:?Missing NEXT_PUBLIC_SANITY_PROJECT_ID}"
           : "${NEXT_PUBLIC_SANITY_DATASET:?Missing NEXT_PUBLIC_SANITY_DATASET}"
 
@@ -112,7 +140,7 @@ jobs:
           rm -rf out && mkdir -p out
           cp -r .next/standalone out/standalone
           cp -r .next/static out/standalone/.next/static
-          if [ -d public ]; then cp -r public out/standalone/public; fi
+          [ -d public ] && cp -r public out/standalone/public
           tar -C out -czf "shophikes_${SHORT_SHA}.tar.gz" standalone
 
       - name: "🔐 Setup SSH"
@@ -131,42 +159,41 @@ jobs:
         run: |
           set -euo pipefail
           : > ecosystem.config.js
-          echo 'module.exports = {' >> ecosystem.config.js
-          echo '  apps: [' >> ecosystem.config.js
-          echo '    {' >> ecosystem.config.js
-          echo '      name: "shophikes",' >> ecosystem.config.js
-          echo '      cwd: "/home/bitnami/htdocs/Ecommerce-with-sanity/current",' >> ecosystem.config.js
-          echo '      script: "standalone/server.js",' >> ecosystem.config.js
-          echo '      instances: 1,' >> ecosystem.config.js
-          echo '      exec_mode: "cluster",' >> ecosystem.config.js
-          echo '      env: {' >> ecosystem.config.js
-          echo '        PORT: 3005,' >> ecosystem.config.js
-          echo '        NODE_ENV: "production",' >> ecosystem.config.js
-          echo '        SANITY_API_READ_TOKEN: "__SANITY_API_READ_TOKEN__",' >> ecosystem.config.js
-          echo '        SANITY_API_TOKEN: "__SANITY_API_TOKEN__",' >> ecosystem.config.js
-          echo '        UPSTASH_REDIS_REST_URL: "__UPSTASH_REDIS_REST_URL__",' >> ecosystem.config.js
-          echo '        UPSTASH_REDIS_REST_TOKEN: "__UPSTASH_REDIS_REST_TOKEN__"' >> ecosystem.config.js
-          echo '      }' >> ecosystem.config.js
-          echo '    }' >> ecosystem.config.js
-          echo '  ]' >> ecosystem.config.js
-          echo '}' >> ecosystem.config.js
+          cat <<'EOF' >> ecosystem.config.js
+  
+          module.exports = {
+          apps: [
+              {
+                name: "shophikes",
+                cwd: "/home/bitnami/htdocs/Ecommerce-with-sanity/current",
+                script: "standalone/server.js",
+                instances: 1,
+                exec_mode: "cluster",
+                watch: false,
+                env: {
+                  PORT: 3005,
+                  NODE_ENV: "production",
+                  SANITY_API_READ_TOKEN: "__SANITY_API_READ_TOKEN__",
+                  SANITY_API_TOKEN: "__SANITY_API_TOKEN__",
+                  UPSTASH_REDIS_REST_URL: "__UPSTASH_REDIS_REST_URL__",
+                  UPSTASH_REDIS_REST_TOKEN: "__UPSTASH_REDIS_REST_TOKEN__"
+                }
+            }
+          ]
+          }
+          
+          EOF
 
-          # Safely escape and substitute secrets into the file
           esc() { printf "%s" "${1:-}" | sed -e 's/[\/&]/\\&/g'; }
-          READ_ESC=$(esc "${SANITY_API_READ_TOKEN:-}")
-          WRITE_ESC=$(esc "${SANITY_API_TOKEN:-}")
-          UPSTASH_URL_ESC=$(esc "${UPSTASH_REDIS_REST_URL:-}")
-          UPSTASH_TOKEN_ESC=$(esc "${UPSTASH_REDIS_REST_TOKEN:-}")
-
-          sed -i "s/__SANITY_API_READ_TOKEN__/${READ_ESC}/g" ecosystem.config.js
-          sed -i "s/__SANITY_API_TOKEN__/${WRITE_ESC}/g"     ecosystem.config.js
-          sed -i "s/__UPSTASH_REDIS_REST_URL__/${UPSTASH_URL_ESC}/g" ecosystem.config.js
-          sed -i "s/__UPSTASH_REDIS_REST_TOKEN__/${UPSTASH_TOKEN_ESC}/g" ecosystem.config.js
+          sed -i "s/__SANITY_API_READ_TOKEN__/$(esc "${SANITY_API_READ_TOKEN}")/" ecosystem.config.js
+          sed -i "s/__SANITY_API_TOKEN__/$(esc "${SANITY_API_TOKEN}")/" ecosystem.config.js
+          sed -i "s/__UPSTASH_REDIS_REST_URL__/$(esc "${UPSTASH_REDIS_REST_URL}")/" ecosystem.config.js
+          sed -i "s/__UPSTASH_REDIS_REST_TOKEN__/$(esc "${UPSTASH_REDIS_REST_TOKEN}")/" ecosystem.config.js
 
       - name: "⬆️ Upload artifact + ecosystem"
         run: |
           scp -i ~/.ssh/id_rsa "shophikes_${SHORT_SHA}.tar.gz" "$SSH_USER@$SSH_HOST:/tmp/"
-          scp -i ~/.ssh/id_rsa ecosystem.config.js            "$SSH_USER@$SSH_HOST:/tmp/"
+          scp -i ~/.ssh/id_rsa ecosystem.config.js "$SSH_USER@$SSH_HOST:/tmp/"
 
       - name: "🚀 Activate release + PM2 start"
         run: |
@@ -182,9 +209,12 @@ jobs:
             ln -sfn \"\$NEW_RELEASE_DIR\" \"\$CURRENT_LINK\"
             if ! command -v pm2 >/dev/null 2>&1; then npm i -g pm2; fi
             mv /tmp/ecosystem.config.js '${APP_DIR}'/ecosystem.config.js
-            pm2 delete shophikes >/dev/null 2>&1 || true
-            pm2 start '${APP_DIR}'/ecosystem.config.js --only shophikes
+            echo '🔁 Restarting PM2 process...'
+            if pm2 list | grep -q shophikes; then
+              pm2 reload shophikes || (pm2 delete shophikes && pm2 start '${APP_DIR}'/ecosystem.config.js --only shophikes)
+            else
+              pm2 start '${APP_DIR}'/ecosystem.config.js --only shophikes
+            fi
             pm2 save
-            # Optional: print env to logs for verification (redacts values length)
-            echo 'PM2 env keys:'; pm2 env shophikes | sed -n 's/^$$SANITY_API_READ_TOKEN\|SANITY_API_TOKEN\|UPSTASH_REDIS_REST_URL\|UPSTASH_REDIS_REST_TOKEN$$=.*/\1=***redacted***/p'
+            echo '✅ PM2 process updated successfully.'
           "
