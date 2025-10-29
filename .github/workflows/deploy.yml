@@ -136,16 +136,27 @@ jobs:
           echo '      env: {' >> ecosystem.config.js
           echo '        PORT: 3005,' >> ecosystem.config.js
           echo '        NODE_ENV: "production",' >> ecosystem.config.js
-          echo '        SANITY_API_READ_TOKEN: "__SANITY_API_READ_TOKEN__",' >> ecosystem.config.js
-          echo '        SANITY_API_TOKEN: "__SANITY_API_TOKEN__"' >> ecosystem.config.js
+          echo '        SANITY_API_READ_TOKEN: "__SANITY_API_READ_TOKEN__", ' >> ecosystem.config.js
+          echo '        SANITY_API_TOKEN: "__SANITY_API_TOKEN__", ' >> ecosystem.config.js
+          echo '        UPSTASH_REDIS_REST_URL: "__UPSTASH_REDIS_REST_URL__", ' >> ecosystem.config.js
+          echo '        UPSTASH_REDIS_REST_TOKEN: "__UPSTASH_REDIS_REST_TOKEN__"' >> ecosystem.config.js
           echo '      }' >> ecosystem.config.js
           echo '    }' >> ecosystem.config.js
           echo '  ]' >> ecosystem.config.js
           echo '}' >> ecosystem.config.js
-          READ_ESC=$(printf "%s" "${SANITY_API_READ_TOKEN:-}" | sed -e 's/[\/&]/\\&/g')
-          WRITE_ESC=$(printf "%s" "${SANITY_API_TOKEN:-}"     | sed -e 's/[\/&]/\\&/g')
+
+          # Safely escape and substitute secrets into the file
+          esc() { printf "%s" "${1:-}" | sed -e 's/[\/&]/\\&/g'; }
+          READ_ESC=$(esc "${SANITY_API_READ_TOKEN:-}")
+          WRITE_ESC=$(esc "${SANITY_API_TOKEN:-}")
+          UPSTASH_URL_ESC=$(esc "${UPSTASH_REDIS_REST_URL:-}")
+          UPSTASH_TOKEN_ESC=$(esc "${UPSTASH_REDIS_REST_TOKEN:-}")
+
           sed -i "s/__SANITY_API_READ_TOKEN__/${READ_ESC}/g" ecosystem.config.js
           sed -i "s/__SANITY_API_TOKEN__/${WRITE_ESC}/g"     ecosystem.config.js
+          sed -i "s/__UPSTASH_REDIS_REST_URL__/${UPSTASH_URL_ESC}/g" ecosystem.config.js
+          sed -i "s/__UPSTASH_REDIS_REST_TOKEN__/${UPSTASH_TOKEN_ESC}/g" ecosystem.config.js
+
 
       # 9) Upload bundle + ecosystem
       - name: "⬆️ Upload artifact + ecosystem"
