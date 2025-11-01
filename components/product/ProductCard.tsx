@@ -4,9 +4,7 @@ import { Product } from "@/sanity.types";
 import { urlFor } from "@/sanity/lib/image";
 import Image from "next/image";
 import Link from "next/link";
-import useCartStore from "@/store/cart-store";
-import { ShoppingCart } from "lucide-react";
-import { Button } from "../ui/button";
+
 
 type SanityChild = {
     _type: "span";
@@ -16,14 +14,7 @@ type SanityChild = {
 };
 
 function ProductThumb({ product }: { product: Product }) {
-    const { addItem } = useCartStore();
     const isOutOfStock = product.stock != null && product.stock <= 0;
-
-    const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.preventDefault(); // 🛑 Stop link navigation
-        e.stopPropagation(); // 🛑 Stop event bubbling
-        addItem(product);
-    };
 
     return (
         <Link
@@ -53,16 +44,6 @@ function ProductThumb({ product }: { product: Product }) {
                         <span className="text-white font-bold text-lg">Out of Stock</span>
                     </div>
                 )}
-                <div className="opacity-0 group-hover:opacity-100 w-full absolute bottom-0 transition-all duration-300">
-                    <Button
-                        className="w-full rounded-none text-lg font-bold hover:"
-                        onClick={handleAddToCart}
-                        disabled={isOutOfStock}
-                    >
-                        <ShoppingCart className="size-5" />
-                        ADD TO CART
-                    </Button>
-                </div>
             </div>
 
             <div className="p-4">

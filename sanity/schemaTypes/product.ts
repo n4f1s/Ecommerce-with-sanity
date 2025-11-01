@@ -60,6 +60,21 @@ export const product = defineType({
         'Upload multiple images (can add one by one or multiple at once)'
     }),
     defineField({
+      name: 'file',
+      title: 'Video File',
+      type: 'file',
+      options: { accept: 'video/*' },
+      description: 'Upload a short product video (MP4/WebM recommended).'
+    }),
+    defineField({
+      name: 'poster',
+      title: 'Video poster Image',
+      type: 'image',
+      options: { hotspot: true },
+      description: 'Shown before playback and as the gallery thumbnail.'
+    }),
+
+    defineField({
       name: 'description',
       title: 'Descrription',
       type: 'blockContent'
@@ -68,6 +83,11 @@ export const product = defineType({
       name: 'features',
       title: 'Features',
       type: 'blockContent'
+    }),
+    defineField({
+      name: 'previousPrice',
+      title: 'Previous price',
+      type: 'number',
     }),
     defineField({
       name: 'price',
@@ -81,7 +101,7 @@ export const product = defineType({
       type: 'array',
       of: [{ type: 'reference', to: [{ type: 'category' }] }]
     }),
-    
+
     // defineField({
     //   name: 'colors',
     //   title: 'Available Colors',
@@ -103,15 +123,18 @@ export const product = defineType({
       title: 'Options',
       type: 'array',
       of: [{ type: 'productOption' }],
-      description: 'Add option sets like Color, Size, Weight; leave empty if not applicable',
+      description:
+        'Add option sets like Color, Size, Weight; leave empty if not applicable',
       // Typed array validation (no unions) to satisfy Rule.custom constraints
-      validation: (Rule) =>
-        Rule.custom<ProductOption[]>((opts) => {
+      validation: Rule =>
+        Rule.custom<ProductOption[]>(opts => {
           if (!Array.isArray(opts)) return true
-          const names = opts.map((o) => o.name?.toLowerCase() ?? '')
+          const names = opts.map(o => o.name?.toLowerCase() ?? '')
           const hasDup = names.some((n, i) => n && names.indexOf(n) !== i)
-          return hasDup ? 'Option names must be unique (e.g., only one "Color")' : true
-        }),
+          return hasDup
+            ? 'Option names must be unique (e.g., only one "Color")'
+            : true
+        })
     }),
 
     // VARIANTS (optional; shown only when options exist)

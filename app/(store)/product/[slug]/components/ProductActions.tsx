@@ -13,11 +13,10 @@ function cx(...classes: Array<string | false | null | undefined>) {
 
 type Props = {
   product: Product;
-  save: number;
   baseOutOfStock: boolean;
 };
 
-export default function ProductActions({ product, save, baseOutOfStock }: Props) {
+export default function ProductActions({ product, baseOutOfStock }: Props) {
   // Initial selection from first value of each option
   const initialSelected = useMemo(() => {
     const obj: Record<string, string> = {};
@@ -48,9 +47,6 @@ export default function ProductActions({ product, save, baseOutOfStock }: Props)
     });
   }, [product.options]);
 
-  // Pricing
-  const basePrice = Number(product.price ?? 0);
-  const originalPrice = useMemo(() => basePrice + Number(save ?? 0), [basePrice, save]);
 
   // Out-of-stock is base only (no variant logic)
   const isOutOfStock = baseOutOfStock;
@@ -60,17 +56,19 @@ export default function ProductActions({ product, save, baseOutOfStock }: Props)
     setSelectedOptions((prev) => ({ ...prev, [optName]: value }));
   }
 
+  const save = (product?.previousPrice ?? 0) - (product?.price ?? 0);
+
   return (
     <div className="w-auto space-y-4">
       {/* Price */}
       <div className="flex flex-wrap gap-4 text-xl font-bold mb-4 items-center">
-        <p className="text-nowrap text-2xl text-theme-primary">Tk {basePrice}</p>
+        <p className="text-nowrap text-2xl text-theme-primary">Tk {product.price}</p>
         <div className="relative text-nowrap text-gray-500 text-base">
           <span
             aria-hidden="true"
             className="pointer-events-none absolute top-1/2 left-0 w-full h-[2px] bg-gray-500"
           />
-          Tk {originalPrice}
+          Tk {product.previousPrice}
         </div>
         {Number(save) > 0 && (
           <div className="px-2 py-1 bg-theme-primary text-white text-sm rounded">SAVE TK {save}</div>
