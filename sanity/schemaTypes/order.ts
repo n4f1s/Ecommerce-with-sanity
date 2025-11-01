@@ -59,12 +59,12 @@ export const order = defineType({
     defineField({
       name: 'city',
       title: 'City',
-      type: 'string',
+      type: 'string'
     }),
     defineField({
       name: 'postalCode',
       title: 'Postal Code',
-      type: 'string',
+      type: 'string'
     }),
     defineField({
       name: 'deliveryInstruction',
@@ -92,6 +92,37 @@ export const order = defineType({
               title: 'Quantity',
               type: 'number',
               validation: Rule => Rule.required().min(1)
+            }),
+            // NEW: capture shopper’s selections per line
+            defineField({
+              name: 'selectedOptions',
+              title: 'Selected Options',
+              type: 'array',
+              of: [
+                defineArrayMember({
+                  type: 'object',
+                  fields: [
+                    defineField({
+                      name: 'name',
+                      title: 'Name',
+                      type: 'string',
+                      validation: Rule => Rule.required()
+                    }),
+                    defineField({
+                      name: 'value',
+                      title: 'Value',
+                      type: 'string',
+                      validation: Rule => Rule.required()
+                    })
+                  ],
+                  preview: {
+                    select: { name: 'name', value: 'value' },
+                    prepare ({ name, value }) {
+                      return { title: `${name}: ${value}` }
+                    }
+                  }
+                })
+              ]
             })
           ],
           preview: {
@@ -99,12 +130,20 @@ export const order = defineType({
               product: 'product.name',
               quantity: 'quantity',
               image: 'product.image',
-              price: 'product.price'
+              price: 'product.price',
+              selected: 'selectedOptions'
             },
             prepare (select) {
+              const chips = Array.isArray(select.selected)
+                ? select.selected
+                    .map((o: any) => `${o?.name}: ${o?.value}`)
+                    .join(' • ')
+                : ''
               return {
                 title: `${select.quantity} × ${select.product}`,
-                subtitle: `৳ ${(select.price || 0) * (select.quantity || 0)}`,
+                subtitle: `৳ ${(select.price || 0) * (select.quantity || 0)}${
+                  chips ? ` — ${chips}` : ''
+                }`,
                 media: select.image
               }
             }

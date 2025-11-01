@@ -1,5 +1,15 @@
 import { ShoppingCart } from 'lucide-react'
-import { defineField, defineType } from 'sanity'
+import { defineField, defineType, SanityDocument } from 'sanity'
+
+// Helper types (minimal shapes used by validation/hidden callbacks)
+type OptionValue = { label: string; hex?: string }
+type ProductOption = { name: string; values?: OptionValue[] }
+
+type VariantOption = { name: string; value: string; hex?: string }
+type ProductVariant = { options?: VariantOption[] }
+
+// Narrower view of the product doc used in callbacks
+type ProductDoc = { options?: ProductOption[] }
 
 export const product = defineType({
   name: 'product',
@@ -71,6 +81,81 @@ export const product = defineType({
       type: 'array',
       of: [{ type: 'reference', to: [{ type: 'category' }] }]
     }),
+    
+    // defineField({
+    //   name: 'colors',
+    //   title: 'Available Colors',
+    //   type: 'array',
+    //   of: [{ type: 'reference', to: [{ type: 'color' }] }],
+    //   description: 'Leave empty if this product has no color variants'
+    // }),
+    // defineField({
+    //   name: 'sizes',
+    //   title: 'Available Sizes',
+    //   type: 'array',
+    //   of: [{ type: 'reference', to: [{ type: 'size' }] }],
+    //   description: 'Leave empty if this product has no size variants'
+    // }),
+
+    // OPTIONS (optional)
+    defineField({
+      name: 'options',
+      title: 'Options',
+      type: 'array',
+      of: [{ type: 'productOption' }],
+      description: 'Add option sets like Color, Size, Weight; leave empty if not applicable',
+      // Typed array validation (no unions) to satisfy Rule.custom constraints
+      validation: (Rule) =>
+        Rule.custom<ProductOption[]>((opts) => {
+          if (!Array.isArray(opts)) return true
+          const names = opts.map((o) => o.name?.toLowerCase() ?? '')
+          const hasDup = names.some((n, i) => n && names.indexOf(n) !== i)
+          return hasDup ? 'Option names must be unique (e.g., only one "Color")' : true
+        }),
+    }),
+
+    // VARIANTS (optional; shown only when options exist)
+    // defineField({
+    //   name: 'variants',
+    //   title: 'Variants',
+    //   type: 'array',
+    //   of: [{ type: 'productVariant' }],
+    //   description: 'Add variants only if product has option combinations; leave empty otherwise',
+    //   // Accept SanityDocument in hidden context and assert to ProductDoc
+    //   hidden: ({ document }: { document?: SanityDocument }) => {
+    //     const doc = document as ProductDoc | undefined
+    //     return !((doc?.options?.length ?? 0) > 0)
+    //   },
+    //   // Typed array validation with standard context; assert document to ProductDoc
+    //   validation: (Rule) =>
+    //     Rule.custom<ProductVariant[]>((vars, ctx: { document?: SanityDocument }) => {
+    //       if (!Array.isArray(vars)) return true
+    //       const doc = ctx.document as ProductDoc | undefined
+
+    //       // Build allowed values from product.options
+    //       const optionMap = new Map<string, Set<string>>() // name -> set(values)
+    //       for (const o of doc?.options ?? []) {
+    //         const key = o.name?.toLowerCase() ?? ''
+    //         const vals = new Set((o.values ?? []).map((v) => v.label.toLowerCase()))
+    //         optionMap.set(key, vals)
+    //       }
+
+    //       // Check each variant's selections
+    //       for (const v of vars) {
+    //         for (const sel of v.options ?? []) {
+    //           const n = sel.name?.toLowerCase() ?? ''
+    //           const val = sel.value?.toLowerCase() ?? ''
+    //           if (!optionMap.has(n)) {
+    //             return `Variant references unknown option "${sel.name}"`
+    //           }
+    //           if (!optionMap.get(n)!.has(val)) {
+    //             return `Variant value "${sel.value}" not found in "${sel.name}"`
+    //           }
+    //         }
+    //       }
+    //       return true
+    //     }),
+    // }),
     defineField({
       name: 'featured',
       title: 'Featured',

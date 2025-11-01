@@ -5,6 +5,7 @@ import useCartStore from "@/store/cart-store";
 import useOrderStore from "@/store/order-store";
 import toast from "react-hot-toast";
 import { useBDLocations } from "@/hooks/useLocations";
+import { Product } from "@/sanity.types";
 
 interface ShippingAddressFormProps {
   onSuccess?: () => void;
@@ -196,11 +197,25 @@ export default function ShippingAddressForm({
     });
   };
 
+  // helper inside the component file (top-level or before handleSubmit)
+  function mapItemsForOrder(items: Array<{ product: Product; quantity: number; selectedOptions?: Record<string, string> }>) {
+    return items.map((it) => ({
+      productId: it.product._id, // if your API expects references, you can pass full product and map server-side
+      quantity: it.quantity,
+      selectedOptions: Object.entries(it.selectedOptions ?? {}).map(([name, value]) => ({ name, value })),
+      // optionally include unitPrice for redundancy
+      price: Number(it.product.price ?? 0),
+    }));
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
+      const rawItems = getGroupedItems();
+      const itemsForApi = mapItemsForOrder(rawItems);
+
       const res = await fetch("/api/orders/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -214,7 +229,7 @@ export default function ShippingAddressForm({
           city: formData.city,
           postalCode: formData.postalCode,
           deliveryInstruction: formData.deliveryInstruction,
-          items: getGroupedItems(),
+          items: itemsForApi,
           deliveryCharge: deliveryCharge,
           totalPrice: getTotalPrice() + deliveryCharge,
         }),
@@ -260,7 +275,7 @@ export default function ShippingAddressForm({
         city: formData.city,
         postalCode: formData.postalCode,
         deliveryInstruction: formData.deliveryInstruction,
-        items: getGroupedItems(),
+        items: rawItems,
         totalPrice: getTotalPrice() + deliveryCharge,
         paymentMethod: "Cash on Delivery",
         status: "pending",

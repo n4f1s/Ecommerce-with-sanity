@@ -77,6 +77,17 @@ export async function POST (req: Request) {
     const normalize = (s?: string) => (s ? s.trim() : '')
     const orderNumber = generateOrderNumber()
 
+    // helper: normalize selected options to array of {name,value}
+    function toKVArray (
+      sel?: Record<string, string> | Array<{ name: string; value: string }>
+    ) {
+      if (Array.isArray(sel))
+        return sel.map(({ name, value }) => ({ name, value }))
+      if (sel && typeof sel === 'object') {
+        return Object.entries(sel).map(([name, value]) => ({ name, value }))
+      }
+      return []
+    }
     // ========== CREATE ORDER ==========
     const orderDoc = {
       _type: 'order',
@@ -100,9 +111,16 @@ export async function POST (req: Request) {
         _key: crypto.randomUUID(),
         product: {
           _type: 'reference',
-          _ref: item.product._id
+          _ref: item.product?._id ?? item.productId,
         },
-        quantity: item.quantity
+        quantity: Number(item.quantity ?? 1),
+        selectedOptions: toKVArray(item.selectedOptions).map(
+          ({ name, value }) => ({
+            _type: 'object',
+            name: String(name),
+            value: String(value)
+          })
+        )
       }))
     }
 
@@ -126,7 +144,7 @@ export async function POST (req: Request) {
       }
     )
   } catch (err: unknown) {
-    // Zod validation error
+ 
     if (err instanceof ZodError) {
       const tree = z.treeifyError(err)
       console.error('❌ Validation error:', tree)

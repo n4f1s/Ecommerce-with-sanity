@@ -1,6 +1,3 @@
-import AddToCartButton from "@/components/product/AddToCartButton";
-import AddToCartQuantity from "@/components/product/AddToCartQuantity";
-import OrderNowButton from "@/components/order/OrderNowButton";
 import ProductDetailTabs from "@/components/product/ProductDetailTabs";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
 import { urlFor } from "@/sanity/lib/image";
@@ -9,6 +6,7 @@ import { CreditCard, LifeBuoy, Truck } from "lucide-react";
 import { PortableText, PortableTextComponents } from "next-sanity";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import ProductActions from "./components/ProductActions";
 
 
 // ✅ Add custom components for PortableText
@@ -64,6 +62,7 @@ async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
     const save = 300;
 
     const isOutOfStock = product.stock != null && product.stock <= 0;
+
     return (
         <>
 
@@ -97,7 +96,7 @@ async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
                         </div>
                     </div>
 
-                    <div className="w-auto space-y-4">
+                    {/* <div className="w-auto space-y-4">
                         <div className="flex flex-wrap gap-4 text-xl font-bold mb-4 items-center">
                             <p className="text-nowrap text-2xl text-theme-primary">
                                 Tk {product.price}
@@ -123,13 +122,49 @@ async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
 
                             <OrderNowButton product={product} disabled={isOutOfStock} />
                         </div>
+
+                        <div className="space-y-6">
+                            {product.options?.map((opt) => (
+                                <div key={opt.name} className="space-y-2">
+                                    <h4 className="text-sm font-semibold">{opt.name}</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(opt.values ?? []).map((v) => {
+                                            const isColor = opt.name?.toLowerCase() === 'color' && Boolean(v.hex)
+                                            return (
+                                                <div
+                                                    key={`${opt.name ?? ''}-${v.label}`}
+                                                    className="inline-flex items-center gap-2 border rounded px-2 py-1"
+                                                >
+                                                    {isColor ? (
+                                                        <span
+                                                            className="inline-block h-4 w-4 rounded-full border"
+                                                            title={v.label}
+                                                            style={{ backgroundColor: v.hex }}
+                                                        />
+                                                    ) : null}
+                                                    <span className="text-sm">{v.label}</span>
+                                                    {v.hex ? <span className="text-xs text-gray-500">{v.hex}</span> : null}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
                         <p className="text-base text-theme-primary">
                             ক্যাশ অন ডেলিভারি
                         </p>
                         <p className="text-sm font-medium text-gray-500 mt-4">
                             ২-৩ কার্যদিবসের মধ্যেই আপনার কাছে পৌছে যাবে।
                         </p>
-                    </div>
+                    </div> */}
+
+                    <ProductActions
+                        product={product}
+                        save={save}
+                        baseOutOfStock={isOutOfStock}
+                    />
                 </div>
 
                 <div className="bg-gray-200 mt-10 py-8 px-6 rounded">

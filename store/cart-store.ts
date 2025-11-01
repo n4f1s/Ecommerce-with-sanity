@@ -1,20 +1,49 @@
 import { Product } from '@/sanity.types'
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+
+export type SelectedOptions = Record<string, string>;
 
 export interface CartItem {
   product: Product
   quantity: number
+  selectedOptions: SelectedOptions
+}
+
+export interface AddOpts {
+  selectedOptions?: SelectedOptions
+  quantity?: number
+}
+
+export interface RemoveOpts {
+  selectedOptions?: SelectedOptions
+  quantity?: number
+}
+
+export interface CountOpts {
+  selectedOptions?: SelectedOptions
 }
 
 interface CartState {
   items: CartItem[]
-  addItem: (product: Product) => void
-  removeItem: (productId: string) => void
+
+  // Actions
+  addItem: (product: Product, opts?: AddOpts) => void
+  removeItem: (productId: string, opts?: RemoveOpts) => void
   clearCart: () => void
+
+  // Selectors
   getTotalPrice: () => number
-  getItemCount: (productId: string) => number
+  getItemCount: (productId: string, opts?: CountOpts) => number
   getGroupedItems: () => CartItem[]
+}
+
+// Normalize options into a deterministic, stable key so that
+// {Color: 'Red', Size: 'M'} equals {Size:'M', Color:'Red'}
+function optionsKey(opts: SelectedOptions = {}): string {
+  const entries = Object.entries(opts).filter(([k, v]) => k && v)
+  entries.sort(([a], [b]) => a.localeCompare(b))
+  return entries.map(([k, v]) => `${k}=${v}`).join('|')
 }
 
 const useCartStore = create<CartState>()(
@@ -22,58 +51,90 @@ const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
 
-      addItem: (product) =>
+      addItem: (product, opts) =>
         set((state) => {
-          const existingItem = state.items.find(
-            (item) => item.product._id === product._id
+          const sel = opts?.selectedOptions ?? {}
+          const qty = Math.max(1, Number(opts?.quantity ?? 1))
+          const key = optionsKey(sel)
+
+          // Find existing line by product id + options key
+          const idx = state.items.findIndex(
+            (it) => it.product._id === product._id && optionsKey(it.selectedOptions) === key
           )
-          if (existingItem) {
-            return {
-              items: state.items.map((item) =>
-                item.product._id === product._id
-                  ? { ...item, quantity: item.quantity + 1 }
-                  : item
-              ),
-            }
-          } else {
-            return { items: [...state.items, { product, quantity: 1 }] }
+
+          if (idx >= 0) {
+            const next = state.items.slice()
+            next[idx] = { ...next[idx], quantity: next[idx].quantity + qty }
+            return { items: next }
+          }
+
+          return {
+            items: [
+              ...state.items,
+              { product, quantity: qty, selectedOptions: sel },
+            ],
           }
         }),
 
-      removeItem: (productId) =>
-        set((state) => ({
-          items: state.items.reduce((acc, item) => {
-            if (item.product._id === productId) {
-              if (item.quantity > 1) {
-                acc.push({ ...item, quantity: item.quantity - 1 })
-              }
-              // if quantity == 1, skip it (removes item)
-            } else {
-              acc.push(item)
+      removeItem: (productId, opts) =>
+        set((state) => {
+          const sel = opts?.selectedOptions ?? {}
+          const qty = Math.max(1, Number(opts?.quantity ?? 1))
+          const key = optionsKey(sel)
+
+          const next: CartItem[] = []
+          for (const it of state.items) {
+            const sameLine =
+              it.product._id === productId &&
+              optionsKey(it.selectedOptions) === key
+
+            if (!sameLine) {
+              next.push(it)
+              continue
             }
-            return acc
-          }, [] as CartItem[]),
-        })),
+
+            const newQty = it.quantity - qty
+            if (newQty > 0) {
+              next.push({ ...it, quantity: newQty })
+            }
+            // if newQty <= 0, drop the line
+          }
+          return { items: next }
+        }),
 
       clearCart: () => set({ items: [] }),
 
       getTotalPrice: () =>
         get().items.reduce(
-          (total, item) => total + (item.product.price ?? 0) * item.quantity,
+          (total, item) => total + Number(item.product.price ?? 0) * item.quantity,
           0
         ),
 
-      getItemCount: (productId) => {
-        const item = get().items.find((item) => item.product._id === productId)
-        return item ? item.quantity : 0
+      // If selectedOptions provided, return that line’s qty; otherwise total for this product id
+      getItemCount: (productId, opts) => {
+        const sel = opts?.selectedOptions
+        if (sel) {
+          const key = optionsKey(sel)
+          const line = get().items.find(
+            (it) => it.product._id === productId && optionsKey(it.selectedOptions) === key
+          )
+          return line ? line.quantity : 0
+        }
+        return get().items
+          .filter((it) => it.product._id === productId)
+          .reduce((sum, it) => sum + it.quantity, 0)
       },
 
+      // Already normalized per line; return as-is
       getGroupedItems: () => get().items,
     }),
     {
       name: 'cart-store',
+      storage: createJSONStorage(() => localStorage),
+      // Optional: only persist items
+      partialize: (state) => ({ items: state.items }),
     }
   )
 )
 
-export default useCartStore;
+export default useCartStore

@@ -151,25 +151,45 @@ const Orders = () => {
                   Order Items
                 </h4>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {order.items.map((item, index) => (
                     <div
-                      key={`${item.product._id}-${index}`}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition border border-gray-200"
+                      key={index}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                     >
                       <div className="flex-1">
                         <p className="font-semibold text-gray-800">
                           {item.product.name ?? "Product"}
                         </p>
-                        <p className="text-sm text-gray-500">
-                          Tk {item.product.price ?? 0} × {item.quantity ?? 0}
+
+                        {/* Selected options chips */}
+                        {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {Object.entries(item.selectedOptions)
+                              .sort(([a], [b]) => a.localeCompare(b))
+                              .map(([name, value]) => (
+                                <span
+                                  key={`${name}:${value}`}
+                                  className="inline-flex items-center rounded-full border bg-white px-2.5 py-0.5 text-xs text-gray-700 shadow-sm"
+                                >
+                                  {name}: {value}
+                                </span>
+                              ))}
+                          </div>
+                        )}
+
+                        <p className="mt-2 text-sm text-gray-500">
+                          Quantity: {item.quantity ?? 0}
                         </p>
                       </div>
+
                       <div className="text-right">
-                        <p className="font-bold text-gray-800">
+                        <p className="font-semibold text-gray-800">
                           Tk {((item.product.price ?? 0) * (item.quantity ?? 0))}
                         </p>
-                        <p className="text-xs text-gray-500">Qty: {item.quantity ?? 0}</p>
+                        <p className="text-xs text-gray-500">
+                          Tk {item.product.price ?? 0} × {item.quantity ?? 0}
+                        </p>
                       </div>
                     </div>
                   ))}

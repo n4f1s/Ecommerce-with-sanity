@@ -1,11 +1,26 @@
 import { z } from "zod";
 
-export const orderItemSchema = z.object({
-  product: z.object({
-    _id: z.string().min(1, "Product _id is required"),
-  }),
-  quantity: z.coerce.number().int().positive().max(999),
+const productRefSchema = z.object({
+  _id: z.string().min(1, "Product _id is required"),
 });
+
+export const orderItemSchema = z
+  .object({
+    // allow either nested product or a flat productId
+    product: productRefSchema.optional(),
+    productId: z.string().min(1, "productId is required when product is omitted").optional(),
+    quantity: z.coerce.number().int().positive().max(999),
+    selectedOptions: z
+      .union([
+        z.record(z.string(), z.string()), // Record<string,string>
+        z.array(z.object({ name: z.string(), value: z.string() })), // KV array
+      ])
+      .optional(),
+  })
+  .refine(
+    (i) => Boolean(i.product?._id || i.productId),
+    { message: "Either product._id or productId is required", path: ["product"] }
+  );
 
 export const createOrderSchema = z.object({
   customerName: z.string().trim().min(2).max(100),

@@ -41,7 +41,7 @@ export default function CartEmptyOrLastOrder() {
                 <Package className="w-5 h-5" />
                 Order Details
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left Column */}
                 <div className="space-y-3">
@@ -143,7 +143,7 @@ export default function CartEmptyOrLastOrder() {
                 <ShoppingBag className="w-5 h-5 text-green-600" />
                 Order Items
               </h3>
-              
+
               <div className="space-y-3">
                 {lastOrder.items.map((item, index) => (
                   <div
@@ -154,10 +154,28 @@ export default function CartEmptyOrLastOrder() {
                       <p className="font-semibold text-gray-800">
                         {item.product.name ?? "Product"}
                       </p>
-                      <p className="text-sm text-gray-500">
+
+                      {/* Selected options chips */}
+                      {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {Object.entries(item.selectedOptions)
+                            .sort(([a], [b]) => a.localeCompare(b))
+                            .map(([name, value]) => (
+                              <span
+                                key={`${name}:${value}`}
+                                className="inline-flex items-center rounded-full border bg-white px-2.5 py-0.5 text-xs text-gray-700 shadow-sm"
+                              >
+                                {name}: {value}
+                              </span>
+                            ))}
+                        </div>
+                      )}
+
+                      <p className="mt-2 text-sm text-gray-500">
                         Quantity: {item.quantity ?? 0}
                       </p>
                     </div>
+
                     <div className="text-right">
                       <p className="font-semibold text-gray-800">
                         Tk {((item.product.price ?? 0) * (item.quantity ?? 0))}
@@ -169,6 +187,7 @@ export default function CartEmptyOrLastOrder() {
                   </div>
                 ))}
               </div>
+
 
               {/* Price Breakdown */}
               <div className="mt-6 space-y-2 border-t pt-4">
@@ -198,8 +217,8 @@ export default function CartEmptyOrLastOrder() {
           {/* Action Button */}
           <div className="text-center mt-8">
             <Link href="/">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
               >
                 Continue Shopping

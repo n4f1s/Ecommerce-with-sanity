@@ -13,6 +13,69 @@
  */
 
 // Source: schema.json
+export type OptionValue = {
+  _type: "optionValue";
+  label?: string;
+  hex?: string;
+};
+
+export type ProductVariant = {
+  _type: "productVariant";
+  title?: string;
+  options?: Array<{
+    name?: string;
+    value?: string;
+    hex?: string;
+    _type: "variantOption";
+    _key: string;
+  }>;
+  price?: number;
+  stock?: number;
+  image?: {
+    asset?: {
+      _ref: string;
+      _type: "reference";
+      _weak?: boolean;
+      [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+    };
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  };
+};
+
+export type ProductOption = {
+  _type: "productOption";
+  name?: string;
+  values?: Array<{
+    _key: string;
+  } & OptionValue>;
+};
+
+export type Size = {
+  _id: string;
+  _type: "size";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  title?: string;
+  slug?: Slug;
+  description?: string;
+};
+
+export type Color = {
+  _id: string;
+  _type: "color";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  title?: string;
+  slug?: Slug;
+  hex?: string;
+  description?: string;
+};
+
 export type Sale = {
   _id: string;
   _type: "sale";
@@ -147,6 +210,12 @@ export type Product = {
     _key: string;
     [internalGroqTypeReferenceTo]?: "category";
   }>;
+  options?: Array<{
+    _key: string;
+  } & ProductOption>;
+  variants?: Array<{
+    _key: string;
+  } & ProductVariant>;
   featured?: boolean;
   stock?: number;
 };
@@ -269,7 +338,7 @@ export type SanityAssetSourceData = {
   url?: string;
 };
 
-export type AllSanitySchemaTypes = Sale | Order | BlockContent | Category | Product | SanityImagePaletteSwatch | SanityImagePalette | SanityImageDimensions | SanityImageHotspot | SanityImageCrop | SanityFileAsset | SanityImageAsset | SanityImageMetadata | Geopoint | Slug | SanityAssetSourceData;
+export type AllSanitySchemaTypes = OptionValue | ProductVariant | ProductOption | Size | Color | Sale | Order | BlockContent | Category | Product | SanityImagePaletteSwatch | SanityImagePalette | SanityImageDimensions | SanityImageHotspot | SanityImageCrop | SanityFileAsset | SanityImageAsset | SanityImageMetadata | Geopoint | Slug | SanityAssetSourceData;
 export declare const internalGroqTypeReferenceTo: unique symbol;
 // Source: ./sanity/lib/products/getAllCategories.ts
 // Variable: ALL_CATEGORIES_QUERY
@@ -331,6 +400,12 @@ export type ALL_PRODUCTS_QUERYResult = Array<{
     _key: string;
     [internalGroqTypeReferenceTo]?: "category";
   }>;
+  options?: Array<{
+    _key: string;
+  } & ProductOption>;
+  variants?: Array<{
+    _key: string;
+  } & ProductVariant>;
   featured?: boolean;
   stock?: number;
 }>;
@@ -381,6 +456,12 @@ export type PRODUCT_BY_ID_QUERYResult = {
     _key: string;
     [internalGroqTypeReferenceTo]?: "category";
   }>;
+  options?: Array<{
+    _key: string;
+  } & ProductOption>;
+  variants?: Array<{
+    _key: string;
+  } & ProductVariant>;
   featured?: boolean;
   stock?: number;
 } | null;
@@ -431,6 +512,12 @@ export type PRODUCT_BY_CATEGORY_QUERYResult = Array<{
     _key: string;
     [internalGroqTypeReferenceTo]?: "category";
   }>;
+  options?: Array<{
+    _key: string;
+  } & ProductOption>;
+  variants?: Array<{
+    _key: string;
+  } & ProductVariant>;
   featured?: boolean;
   stock?: number;
 }>;
@@ -481,6 +568,12 @@ export type PRODUCT_SEARCH_QUERYResult = Array<{
     _key: string;
     [internalGroqTypeReferenceTo]?: "category";
   }>;
+  options?: Array<{
+    _key: string;
+  } & ProductOption>;
+  variants?: Array<{
+    _key: string;
+  } & ProductVariant>;
   featured?: boolean;
   stock?: number;
 }>;
