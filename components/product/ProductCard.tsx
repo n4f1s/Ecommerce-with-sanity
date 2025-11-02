@@ -65,7 +65,7 @@ function ProductThumb({ product }: { product: Product }) {
                         : "No description available."}
                 </p>
 
-                <p className="mt-2 text-lg font-bold text-gray-900">
+                <p className="mt-2 text-lg font-bold text-theme-primary">
                     Tk {product.price}
                 </p>
             </div>
