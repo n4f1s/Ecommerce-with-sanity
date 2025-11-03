@@ -180,14 +180,14 @@
   }
 }
 
-.hithere {
+.orderAnimation {
   animation: hithere-paused-2-3 5s ease-in-out infinite;
   transform-origin: 50% 50%;
   will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hithere {
+  .orderAnimation {
     animation: none;
   }
 }

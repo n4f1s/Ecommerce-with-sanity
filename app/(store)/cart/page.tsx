@@ -10,7 +10,6 @@ import { useEffect, useMemo, useState } from "react";
 import CartEmptyOrLastOrder from "./components/CartEmptyOrLastOrder";
 import Loading from "./loading";
 
-// If you already exported this from your store utils, import it instead.
 function optionsKey(opts: Record<string, string> = {}) {
   const entries = Object.entries(opts).filter(([k, v]) => k && v);
   entries.sort(([a], [b]) => a.localeCompare(b));

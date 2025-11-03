@@ -4,90 +4,131 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { urlFor } from "@/sanity/lib/image";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Thumbs, Autoplay } from "swiper/modules";
+import { Thumbs, Autoplay } from "swiper/modules";
 import type { Swiper as SwiperInstance } from "swiper/types";
-import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
+import type { Product } from "@/sanity.types";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/thumbs";
 import "swiper/css/pagination";
 
-
-
+type ImageType = NonNullable<Product["image"]>;
+type MaybeImage = ImageType | null;
 
 interface ProductImageGalleryProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  product: any;
+  images: ImageType[];
+  selectedImage: MaybeImage;
+  videoUrl?: string;
+  poster?: MaybeImage;
   isOutOfStock?: boolean;
 }
-// Product & {videoUrl?: string;
+
 type Slide =
   | { kind: "video"; src: string; poster?: string }
-  | { kind: "image"; src: string; alt: string };
+  | { kind: "image"; src: string; alt: string; fromSelected?: boolean };
 
 export default function ProductImageGallery({
-  product,
+  images,
+  selectedImage,
+  videoUrl,
+  poster,
   isOutOfStock = false,
 }: ProductImageGalleryProps) {
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperInstance | null>(null);
+  const [mainSwiper, setMainSwiper] = useState<SwiperInstance | null>(null);
   const [activeIndex, setActiveIndex] = useState<number>(0);
+  const [injectedSelectedSrc, setInjectedSelectedSrc] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Precompute poster URLs with explicit aspect to respect crop/hotspot and reduce bytes
   const posterMain = useMemo(() => {
-    return product.poster
-      ? urlFor(product.poster).width(1200).fit("crop").format("webp").url()
-      : undefined;
-  }, [product.poster]);
+    return poster ? urlFor(poster).width(1200).fit("crop").format("webp").url() : undefined;
+  }, [poster]);
 
   const posterThumb = useMemo(() => {
-    return product.poster
-      ? urlFor(product.poster).width(200).height(200).fit("crop").format("webp").url()
+    return poster
+      ? urlFor(poster).width(200).height(200).fit("crop").format("webp").url()
       : posterMain;
-  }, [product.poster, posterMain]);
+  }, [poster, posterMain]);
 
-  const images: SanityImageSource[] = useMemo(() => {
-    const raw = [product?.image, ...(product.productImages ?? [])];
-    return raw.filter(Boolean) as SanityImageSource[];
-  }, [product?.image, product.productImages]);
-
-  // Build slides: video first if exists, then images; ensure stable refs
+  // Build slides: optional video, possibly injected selected image (if not in list), then images
   const slides: Slide[] = useMemo(() => {
     const s: Slide[] = [];
-    if (product.videoUrl) {
-      s.push({ kind: "video", src: product.videoUrl, poster: posterMain });
+    if (videoUrl) s.push({ kind: "video", src: videoUrl, poster: posterMain });
+
+    // If selected image URL is not part of images, inject it right after video
+    if (injectedSelectedSrc) {
+      s.push({
+        kind: "image",
+        src: injectedSelectedSrc,
+        alt: "Selected image",
+        fromSelected: true,
+      });
     }
+
     for (let i = 0; i < images.length; i++) {
       s.push({
         kind: "image",
         src: urlFor(images[i]).width(800).format("webp").url(),
-        alt: product.name || `Product image ${i + 1}`,
+        alt: `Product image ${i + 1}`,
       });
     }
+
     if (s.length === 0) {
-      s.push({
-        kind: "image",
-        src: "/placeholder.png",
-        alt: product.name || "No image available",
-      });
+      s.push({ kind: "image", src: "/placeholder.png", alt: "No image available" });
     }
     return s;
-  }, [product.videoUrl, posterMain, images, product.name]);
+  }, [videoUrl, posterMain, images, injectedSelectedSrc]);
 
-  // Pause video when leaving the first slide (effect)
+  // Sync main swiper to selectedImage; inject if not found
   useEffect(() => {
-    if (activeIndex !== 0 && product.videoUrl && videoRef.current) {
+    if (!selectedImage) return;
+
+    const selectedUrl = urlFor(selectedImage).width(800).format("webp").url();
+
+    // If already present, slide to it
+    const idx = slides.findIndex((s) => s.kind === "image" && s.src === selectedUrl);
+    if (idx >= 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (mainSwiper && !(mainSwiper as any).destroyed) {
+        mainSwiper.slideTo(idx);
+      } else {
+        setActiveIndex(idx);
+      }
+      // Clear any previously injected slide if not needed anymore
+      if (injectedSelectedSrc) setInjectedSelectedSrc(null);
+      return;
+    }
+
+    // Not present: inject and then slide to the injected index (video at 0 if exists)
+    const injectedIndex = videoUrl ? 1 : 0;
+    setInjectedSelectedSrc(selectedUrl);
+
+    // After slides recompute, move to injected index
+    // Use a microtask to let React re-render Swiper
+    queueMicrotask(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (mainSwiper && !(mainSwiper as any).destroyed) {
+        mainSwiper.slideTo(injectedIndex);
+      } else {
+        setActiveIndex(injectedIndex);
+      }
+    });
+  }, [selectedImage, slides, mainSwiper, videoUrl, injectedSelectedSrc]);
+
+  // Pause video when leaving its slide
+  useEffect(() => {
+    if (activeIndex !== 0 && videoUrl && videoRef.current) {
       try {
         videoRef.current.pause();
       } catch {}
     }
-  }, [activeIndex, product.videoUrl]);
+  }, [activeIndex, videoUrl]);
 
   const onMainSlideChange = (swiper: SwiperInstance) => {
     const nextIndex = swiper.realIndex ?? swiper.activeIndex ?? 0;
     setActiveIndex(nextIndex);
-    if (nextIndex !== 0 && product.videoUrl && videoRef.current) {
+    if (nextIndex !== 0 && videoUrl && videoRef.current) {
       try {
         videoRef.current.pause();
       } catch {}
@@ -95,26 +136,25 @@ export default function ProductImageGallery({
   };
 
   const thumbsOption = useMemo(() => {
-    // Swiper recommends guarding against destroyed instances
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return { swiper: thumbsSwiper && !(thumbsSwiper as any).destroyed ? thumbsSwiper : null };
   }, [thumbsSwiper]);
-
 
   return (
     <div className={`w-full ${isOutOfStock ? "opacity-50" : ""}`}>
       {/* Main Slider */}
       <div className="relative">
         <Swiper
+          onSwiper={setMainSwiper}
           spaceBetween={10}
-          navigation={{ nextEl: ".custom-next", prevEl: ".custom-prev" }}
           loop
           speed={400}
           autoplay={{ delay: 5000, disableOnInteraction: true }}
           thumbs={thumbsOption}
-          modules={[Navigation, Thumbs, Autoplay]}
+          modules={[Thumbs, Autoplay]}
           className="rounded-xl shadow-lg aspect-square w-full"
           onSlideChange={onMainSlideChange}
+          initialSlide={activeIndex}
         >
           {slides.map((slide, i) => (
             <SwiperSlide key={`main-${i}`}>
@@ -144,14 +184,6 @@ export default function ProductImageGallery({
             </SwiperSlide>
           ))}
         </Swiper>
-
-        {/* Custom Navigation Arrows */}
-        {/* <div className="custom-prev absolute top-1/2 left-2 -translate-y-1/2 z-10 size-10 flex justify-center rounded-full bg-theme-primary shadow-md cursor-pointer hover:bg-theme-secondary transition-all duration-300">
-          <span className="text-3xl font-bold text-white">‹</span>
-        </div>
-        <div className="custom-next absolute top-1/2 right-2 -translate-y-1/2 z-10 size-10 flex justify-center rounded-full bg-theme-primary shadow-md cursor-pointer hover:bg-theme-secondary transition-all duration-300">
-          <span className="text-3xl font-bold text-white">›</span>
-        </div> */}
       </div>
 
       {/* Thumbnails */}

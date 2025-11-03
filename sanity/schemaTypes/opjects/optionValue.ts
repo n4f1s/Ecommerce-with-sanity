@@ -10,22 +10,24 @@ export const optionValue = defineType({
       name: 'label',
       title: 'Label',
       type: 'string',
-      validation: (Rule) => Rule.required(),
+      validation: Rule => Rule.required()
     }),
-    // defineField({
-    //   name: 'hex',
-    //   title: 'Hex (only for Color)',
-    //   type: 'string',
-    //   description: 'e.g. #FF0000',
-    //   validation: (Rule) =>
-    //     Rule.custom((val) =>
-    //       !val || /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(val)
-    //         ? true
-    //         : 'Invalid hex code'
-    //     ),
-    // }),
+    defineField({
+      name: 'image',
+      title: 'Image (optional)',
+      type: 'image',
+      options: { hotspot: true },
+      description:
+        'Upload an image for this option value (e.g., color swatch or size reference)'
+    }),
+    defineField({
+      name: 'hex',
+      title: 'Hex (only for Color)',
+      type: 'string',
+      description: 'e.g. #FF0000',
+    }),
   ],
   preview: {
-    select: { title: 'label', subtitle: 'hex' },
-  },
+    select: { title: 'label', subtitle: 'hex' }
+  }
 })

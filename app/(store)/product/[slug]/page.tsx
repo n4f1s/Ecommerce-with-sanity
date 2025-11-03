@@ -1,38 +1,12 @@
 import ProductDetailTabs from "@/components/product/ProductDetailTabs";
-import ProductImageGallery from "@/components/product/ProductImageGallery";
-import { urlFor } from "@/sanity/lib/image";
 import { getProductBySlug } from "@/sanity/lib/products/getProductBySlug";
 import { CreditCard, LifeBuoy, Truck } from "lucide-react";
-import { PortableText, PortableTextComponents } from "next-sanity";
-import Image from "next/image";
 import { notFound } from "next/navigation";
-import ProductActions from "./components/ProductActions";
+import ProductDetailSection from "@/components/product/ProductDetailSection";
 
 
-
-// ✅ Add custom components for PortableText
-const components: PortableTextComponents = {
-    types: {
-        image: ({ value }) => (
-            <div className="my-6 flex justify-center">
-                <Image
-                    src={urlFor(value).width(800).format("webp").url()}
-                    alt={value.alt || "Product image"}
-                    width={800}
-                    height={500}
-                    className="rounded-lg shadow-md object-cover"
-                />
-            </div>
-        ),
-    },
-};
 
 const features = [
-    // {
-    //     icon: Rocket,
-    //     title: "ফ্রি শিপিং",
-    //     description: "২০০০ টাকা-এর বেশি সব অর্ডারে কোনো ডেলিভারি চার্জ নেই।",
-    // },
     {
         icon: Truck,
         title: "দ্রুত ডেলিভারি",
@@ -65,42 +39,8 @@ async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
     return (
         <>
             <div className="wrapper">
-                <div className="flex flex-row lg:flex-nowrap flex-wrap gap-8">
-                    <div className="w-full lg:w-[340px] h-auto">
-                        <ProductImageGallery product={product} isOutOfStock={isOutOfStock} />
-                    </div>
 
-                    <div className="w-full lg:w-[1400px]">
-                        <div className="flex flex-col justify-between">
-                            <div>
-                                <h1 className="text-xl font-semibold">
-                                    {product.name}
-                                </h1>
-
-                                <div className="w-full h-[1px] bg-gray-300 my-4" />
-
-                                {!isOutOfStock && (
-                                    <p className="text-theme-primary text-xl font-semibold">
-                                        In Stock
-                                    </p>
-                                )}
-
-                                <div className="prose max-w-none mt-4">
-                                    {Array.isArray(product.features) && (
-                                        <PortableText value={product.features} components={components} />
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="w-full">
-                        <ProductActions
-                            product={product}
-                            baseOutOfStock={isOutOfStock}
-                        />
-                    </div>
-                </div>
+                <ProductDetailSection product={product} isOutOfStock={isOutOfStock} />
 
                 <div className="bg-gray-200 mt-10 py-8 px-6 rounded">
                     <div className="flex flex-wrap gap-5 sm:gap-8 justify-center items-center">

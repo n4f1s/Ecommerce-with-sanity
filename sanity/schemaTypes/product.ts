@@ -101,22 +101,6 @@ export const product = defineType({
       type: 'array',
       of: [{ type: 'reference', to: [{ type: 'category' }] }]
     }),
-
-    // defineField({
-    //   name: 'colors',
-    //   title: 'Available Colors',
-    //   type: 'array',
-    //   of: [{ type: 'reference', to: [{ type: 'color' }] }],
-    //   description: 'Leave empty if this product has no color variants'
-    // }),
-    // defineField({
-    //   name: 'sizes',
-    //   title: 'Available Sizes',
-    //   type: 'array',
-    //   of: [{ type: 'reference', to: [{ type: 'size' }] }],
-    //   description: 'Leave empty if this product has no size variants'
-    // }),
-
     // OPTIONS (optional)
     defineField({
       name: 'options',
@@ -126,15 +110,15 @@ export const product = defineType({
       description:
         'Add option sets like Color, Size, Weight; leave empty if not applicable',
       // Typed array validation (no unions) to satisfy Rule.custom constraints
-      validation: Rule =>
-        Rule.custom<ProductOption[]>(opts => {
-          if (!Array.isArray(opts)) return true
-          const names = opts.map(o => o.name?.toLowerCase() ?? '')
-          const hasDup = names.some((n, i) => n && names.indexOf(n) !== i)
-          return hasDup
-            ? 'Option names must be unique (e.g., only one "Color")'
-            : true
-        })
+      // validation: Rule =>
+      //   Rule.custom<ProductOption[]>(opts => {
+      //     if (!Array.isArray(opts)) return true
+      //     const names = opts.map(o => o.name?.toLowerCase() ?? '')
+      //     const hasDup = names.some((n, i) => n && names.indexOf(n) !== i)
+      //     return hasDup
+      //       ? 'Option names must be unique (e.g., only one "Color")'
+      //       : true
+      //   })
     }),
 
     // VARIANTS (optional; shown only when options exist)
