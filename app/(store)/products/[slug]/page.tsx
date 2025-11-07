@@ -3,6 +3,7 @@ import { getProductBySlug } from "@/sanity/lib/products/getProductBySlug";
 import { CreditCard, LifeBuoy, Truck } from "lucide-react";
 import { notFound } from "next/navigation";
 import ProductDetailSection from "@/components/product/ProductDetailSection";
+import BreadcrumbsBar from "@/components/layout/Breadcrumb";
 
 
 
@@ -38,7 +39,8 @@ async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
 
     return (
         <>
-            <div className="wrapper">
+            <BreadcrumbsBar />
+            <div className="sm:px-16 px-4 pt-4 pb-10 sm:pb-16 max-w-[1500px] w-full h-full mx-auto relative">
 
                 <ProductDetailSection product={product} isOutOfStock={isOutOfStock} />
 

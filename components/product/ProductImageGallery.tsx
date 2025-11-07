@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { urlFor } from "@/sanity/lib/image";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Thumbs, Autoplay } from "swiper/modules";
+import { Thumbs } from "swiper/modules";
 import type { Swiper as SwiperInstance } from "swiper/types";
 import type { Product } from "@/sanity.types";
 
@@ -149,9 +149,8 @@ export default function ProductImageGallery({
           spaceBetween={10}
           loop
           speed={400}
-          autoplay={{ delay: 5000, disableOnInteraction: true }}
           thumbs={thumbsOption}
-          modules={[Thumbs, Autoplay]}
+          modules={[Thumbs]}
           className="rounded-xl shadow-lg aspect-square w-full"
           onSlideChange={onMainSlideChange}
           initialSlide={activeIndex}

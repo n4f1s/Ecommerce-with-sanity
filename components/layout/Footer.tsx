@@ -48,7 +48,7 @@ const Footer = () => {
 
       {/* Link grid */}
       <nav className="wrapper" aria-label="Footer navigation">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
             <Link href="/" className="text-xl font-extrabold text-theme-primary">ShopHikes</Link>
@@ -64,15 +64,13 @@ const Footer = () => {
           </div>
 
           {/* Shop */}
-          <div>
+          {/* <div>
             <h4 className="text-sm font-semibold text-gray-900">Shop</h4>
             <ul className="mt-3 space-y-2 text-sm">
               <li><Link href="/new">New arrivals</Link></li>
               <li><Link href="/bestsellers">Best sellers</Link></li>
-              <li><Link href="/offers">Deals & offers</Link></li>
-              <li><Link href="/categories">All categories</Link></li>
             </ul>
-          </div>
+          </div> */}
 
           {/* Help */}
           <div>

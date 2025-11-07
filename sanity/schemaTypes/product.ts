@@ -19,13 +19,13 @@ export const product = defineType({
   fields: [
     defineField({
       name: 'name',
-      title: 'Product name',
+      title: 'Product Name',
       type: 'string',
       validation: Rule => Rule.required()
     }),
     defineField({
       name: 'slug',
-      title: 'slug',
+      title: 'Slug',
       type: 'slug',
       options: {
         source: 'name',
@@ -68,15 +68,14 @@ export const product = defineType({
     }),
     defineField({
       name: 'poster',
-      title: 'Video poster Image',
+      title: 'Video Poster Image',
       type: 'image',
       options: { hotspot: true },
       description: 'Shown before playback and as the gallery thumbnail.'
     }),
-
     defineField({
       name: 'description',
-      title: 'Descrription',
+      title: 'Description',
       type: 'blockContent'
     }),
     defineField({
@@ -86,7 +85,7 @@ export const product = defineType({
     }),
     defineField({
       name: 'previousPrice',
-      title: 'Previous price',
+      title: 'Previous Price',
       type: 'number',
     }),
     defineField({

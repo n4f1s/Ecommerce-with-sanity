@@ -19,7 +19,7 @@ function ProductThumb({ product }: { product: Product }) {
     return (
         <Link
             scroll={true}
-            href={`/product/${product.slug?.current}`}
+            href={`/products/${product.slug?.current}`}
             className={`group flex flex-col bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${isOutOfStock ? "opacity-50" : ""
                 }`}
         >
