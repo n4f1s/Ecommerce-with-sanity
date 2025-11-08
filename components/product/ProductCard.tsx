@@ -51,7 +51,7 @@ function ProductThumb({ product }: { product: Product }) {
                     {product.name}
                 </h2>
 
-                <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                <div className="mt-2 text-sm text-gray-600 line-clamp-2">
                     {product.description && Array.isArray(product.description)
                         ? product.description
                             .map((block) =>
@@ -63,7 +63,7 @@ function ProductThumb({ product }: { product: Product }) {
                             )
                             .join(" ")
                         : "No description available."}
-                </p>
+                </div>
 
                 <p className="mt-2 text-lg font-bold text-theme-primary">
                     Tk {product.price}

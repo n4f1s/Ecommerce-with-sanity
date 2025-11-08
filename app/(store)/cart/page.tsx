@@ -52,7 +52,7 @@ function CartPage() {
                 >
                   <div
                     className="min-w-0 flex flex-1 cursor-pointer items-center"
-                    onClick={() => router.push(`/product/${item.product.slug?.current}`)}
+                    onClick={() => router.push(`/products/${item.product.slug?.current}`)}
                   >
                     <div className="mr-4 size-20 flex-shrink-0 sm:size-24">
                       {item.product.image && (

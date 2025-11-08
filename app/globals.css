@@ -191,3 +191,30 @@
     animation: none;
   }
 }
+
+
+.animated-gradient {
+  /* Multi-stop cool-blue gradient */
+  --g1: #1e3a8a; /* deep navy */
+  --g2: #2563eb; /* vibrant blue */
+  --g3: #e73c7e; /* cyan-blue */
+  --g4: #60a5fa; /* light azure */
+  background: linear-gradient(-45deg, var(--g1), var(--g2), var(--g3), var(--g4));
+  background-size: 400% 400%;
+  /* Gentle motion by default */
+  animation: hero-gradient-flow 15s ease-in-out infinite;
+}
+
+/* Motion-safe: only animate when user allows */
+@media (prefers-reduced-motion: reduce) {
+  .animated-gradient {
+    animation: none;
+    background-size: 200% 200%; /* still looks rich without motion */
+  }
+}
+
+@keyframes hero-gradient-flow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

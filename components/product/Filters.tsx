@@ -1,17 +1,20 @@
-'use client'
+// components/Filters.tsx
+"use client"
 
-import { useEffect, useMemo, useState } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { X, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import type { Category } from '@/sanity.types'
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { X, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import type { Category } from "@/sanity.types"
 
 type FiltersProps = {
   initialState: Record<string, string | string[] | undefined>
   categories: Category[]
+  onApply?: () => void
+  onClear?: () => void
 }
 
 type FilterState = {
@@ -20,7 +23,15 @@ type FilterState = {
   max: string
 }
 
-const FiltersRoot: React.FC<FiltersProps> = ({ initialState, categories }) => {
+export type FiltersHandle = {
+  apply: () => void
+  clear: () => void
+}
+
+const FiltersRoot = forwardRef<FiltersHandle, FiltersProps>(function FiltersRoot(
+  { initialState, categories, onApply, onClear },
+  ref
+) {
   const router = useRouter()
   const pathname = usePathname()
   const params = useSearchParams()
@@ -29,33 +40,43 @@ const FiltersRoot: React.FC<FiltersProps> = ({ initialState, categories }) => {
     category: Array.isArray(initialState.category)
       ? (initialState.category as string[])
       : initialState.category
-        ? [initialState.category as string]
-        : [],
-    min: (initialState.min as string) ?? '',
-    max: (initialState.max as string) ?? '',
+      ? [initialState.category as string]
+      : [],
+    min: (initialState.min as string) ?? "",
+    max: (initialState.max as string) ?? "",
   })
 
-  // Keep in sync with URL
   useEffect(() => {
     setLocal({
-      category: params.getAll('category'),
-      min: params.get('min') ?? '',
-      max: params.get('max') ?? '',
+      category: params.getAll("category"),
+      min: params.get("min") ?? "",
+      max: params.get("max") ?? "",
     })
   }, [params])
 
-  const apply = () => {
+  const doApply = () => {
     const sp = new URLSearchParams()
-    local.category.forEach((c) => sp.append('category', c))
-    if (local.min) sp.set('min', local.min)
-    if (local.max) sp.set('max', local.max)
+    local.category.forEach((c) => sp.append("category", c))
+    if (local.min) sp.set("min", local.min)
+    if (local.max) sp.set("max", local.max)
     router.replace(`${pathname}?${sp.toString()}`)
+    onApply?.()
   }
 
-  const clearAll = () => {
-    setLocal({ category: [], min: '', max: '' })
+  const doClear = () => {
+    setLocal({ category: [], min: "", max: "" })
     router.replace(pathname)
+    onClear?.()
   }
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      apply: doApply,
+      clear: doClear,
+    }),
+    [local, pathname, router, onApply, onClear]
+  )
 
   const toggleCategory = (slug: string) => {
     setLocal((prev) => ({
@@ -66,11 +87,10 @@ const FiltersRoot: React.FC<FiltersProps> = ({ initialState, categories }) => {
     }))
   }
 
-  const hasActive = local.category.length > 0 || local.min !== '' || local.max !== ''
+  const hasActive = local.category.length > 0 || local.min !== "" || local.max !== ""
 
-  // Derive category list (sorted by title)
   const categoryList = useMemo(() => {
-    return [...categories].sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
+    return [...categories].sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""))
   }, [categories])
 
   return (
@@ -80,7 +100,7 @@ const FiltersRoot: React.FC<FiltersProps> = ({ initialState, categories }) => {
           Filters
         </h2>
         {hasActive && (
-          <Button variant="ghost" size="sm" onClick={clearAll} className="text-sm h-8 cursor-pointer">
+          <Button variant="ghost" size="sm" onClick={doClear} className="text-sm h-8 cursor-pointer">
             Clear all
           </Button>
         )}
@@ -90,7 +110,7 @@ const FiltersRoot: React.FC<FiltersProps> = ({ initialState, categories }) => {
         <fieldset className="space-y-3">
           <legend className="sr-only">Filter by category</legend>
           {categoryList.map((cat) => {
-            const slug = cat.slug?.current ?? ''
+            const slug = cat.slug?.current ?? ""
             if (!slug) return null
             const checked = local.category.includes(slug)
             return (
@@ -152,13 +172,13 @@ const FiltersRoot: React.FC<FiltersProps> = ({ initialState, categories }) => {
 
       {/* Desktop apply */}
       <div className="hidden sm:block pt-2">
-        <Button onClick={apply} className="w-full bg-theme-primary hover:bg-theme-secondary">
+        <Button onClick={doApply} className="w-full bg-theme-primary hover:bg-theme-secondary">
           Apply Filters
         </Button>
       </div>
     </div>
   )
-}
+})
 
 type SectionProps = {
   title: string
@@ -181,7 +201,7 @@ function Section({ title, id, children, defaultOpen = true }: SectionProps) {
         <span className="text-sm font-medium">{title}</span>
         {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </button>
-      <div id={id} hidden={!open} className="mt-3">
+      <div id={id} hidden={!open} className="mt-3" aria-hidden={!open}>
         {children}
       </div>
     </div>
@@ -191,11 +211,12 @@ function Section({ title, id, children, defaultOpen = true }: SectionProps) {
 const MobileTriggerImpl: React.FC<{ categories: Category[] }> = ({ categories }) => {
   const [open, setOpen] = useState(false)
   const params = useSearchParams()
+  const innerRef = useRef<FiltersHandle | null>(null)
 
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
+    document.body.style.overflow = open ? "hidden" : ""
     return () => {
-      document.body.style.overflow = ''
+      document.body.style.overflow = ""
     }
   }, [open])
 
@@ -203,52 +224,60 @@ const MobileTriggerImpl: React.FC<{ categories: Category[] }> = ({ categories })
     <>
       <style jsx global>{`
         @keyframes slideInRightFilters {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
         }
       `}</style>
 
-      <Button
-        variant="outline"
-        className="w-full justify-center gap-2"
-        onClick={() => setOpen(true)}
-        aria-label="Open filters"
-      >
-        <SlidersHorizontal className="h-4 w-4" />
-        Filters
-      </Button>
+      <div className="lg:hidden">
+        <Button
+          variant="outline"
+          className="w-full justify-center gap-2"
+          onClick={() => setOpen(true)}
+          aria-label="Open filters"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          Filters
+        </Button>
+      </div>
 
       {open && (
-        <div role="dialog" aria-modal="true" aria-labelledby="mobile-filters-title" className="fixed inset-0 z-50 sm:hidden">
-          {/* Backdrop */}
+        <div role="dialog" aria-modal="true" aria-labelledby="mobile-filters-title" className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} aria-hidden="true" />
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-            aria-hidden="true"
-          />
-
-          {/* Right drawer with animation */}
-          <div
-            className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-background shadow-2xl flex flex-col"
-            style={{ transform: 'translateX(100%)', animation: 'slideInRightFilters 280ms ease-out forwards' }}
+            className="absolute right-0 top-0 bottom-0 w-full max-w-[300px] bg-background shadow-2xl flex flex-col"
+            style={{ transform: "translateX(100%)", animation: "slideInRightFilters 280ms ease-out forwards" }}
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-border">
-              <div />
+              <h2 id="mobile-filters-title" className="text-lg font-semibold">
+                Filters
+              </h2>
               <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Close filters">
-                <X className="size-6 text-gray-600" />
+                <X className="h-5 w-5" />
               </Button>
             </div>
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-6">
-              <FiltersRoot initialState={Object.fromEntries(params)} categories={categories} />
+              <FiltersRoot
+                ref={innerRef}
+                initialState={Object.fromEntries(params)}
+                categories={categories}
+                onApply={() => setOpen(false)}
+                onClear={() => setOpen(false)}
+              />
             </div>
 
-            {/* Footer */}
             <div className="sticky bottom-0 border-t border-border bg-background p-4 flex gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-              <CloseAndClear />
-              <CloseAndApply />
+              <Button variant="outline" className="flex-1" onClick={() => innerRef.current?.clear()}>
+                Clear
+              </Button>
+              <Button className="flex-1 bg-theme-primary hover:bg-theme-secondary" onClick={() => innerRef.current?.apply()}>
+                Apply
+              </Button>
             </div>
           </div>
         </div>
@@ -257,59 +286,33 @@ const MobileTriggerImpl: React.FC<{ categories: Category[] }> = ({ categories })
   )
 }
 
-function CloseAndClear() {
-  const router = useRouter()
-  const pathname = usePathname()
-  return (
-    <Button variant="outline" className="flex-1" onClick={() => router.replace(pathname)}>
-      Clear
-    </Button>
-  )
-}
-
-function CloseAndApply() {
-  // The FiltersRoot writes to URL on Apply (desktop). For mobile, closing the sheet is enough,
-  // because the inner FiltersRoot manipulates URL directly via its Apply button.
-  const [closing, setClosing] = useState(false)
-  return (
-    <Button
-      className="flex-1 bg-theme-primary hover:bg-theme-secondary"
-      onClick={() => setClosing(true)}
-      aria-disabled={closing}
-    >
-      Apply
-    </Button>
-  )
-}
-
-const ActiveChipsImpl: React.FC<{ className?: string }> = ({ className = '' }) => {
+const ActiveChipsImpl: React.FC<{ className?: string }> = ({ className = "" }) => {
   const params = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
 
-  const chips: Array<{ key: 'category' | 'price'; value: string; label: string }> = []
+  const chips: Array<{ key: "category" | "price"; value: string; label: string }> = []
 
-  // Categories from URL; labels resolve lazily via URL only (page shows them via text)
-  params.getAll('category').forEach((slug) => {
-    chips.push({ key: 'category', value: slug, label: slug })
+  params.getAll("category").forEach((slug) => {
+    chips.push({ key: "category", value: slug, label: slug })
   })
 
-  const min = params.get('min')
-  const max = params.get('max')
+  const min = params.get("min")
+  const max = params.get("max")
   if (min || max) {
     const label = min && max ? `Price: $${min}–$${max}` : min ? `From $${min}` : `Up to $${max}`
-    chips.push({ key: 'price', value: '', label })
+    chips.push({ key: "price", value: "", label })
   }
 
-  const remove = (chip: { key: 'category' | 'price'; value: string }) => {
+  const remove = (chip: { key: "category" | "price"; value: string }) => {
     const sp = new URLSearchParams(params.toString())
-    if (chip.key === 'price') {
-      sp.delete('min')
-      sp.delete('max')
+    if (chip.key === "price") {
+      sp.delete("min")
+      sp.delete("max")
     } else {
-      const all = sp.getAll('category').filter((v) => v !== chip.value)
-      sp.delete('category')
-      all.forEach((v) => sp.append('category', v))
+      const all = sp.getAll("category").filter((v) => v !== chip.value)
+      sp.delete("category")
+      all.forEach((v) => sp.append("category", v))
     }
     router.replace(`${pathname}?${sp.toString()}`)
   }
@@ -335,7 +338,7 @@ const ActiveChipsImpl: React.FC<{ className?: string }> = ({ className = '' }) =
   )
 }
 
-type FiltersComposite = React.FC<FiltersProps> & {
+type FiltersComposite = React.FC<FiltersProps & React.RefAttributes<FiltersHandle>> & {
   MobileTrigger: React.FC<{ categories: Category[] }>
   ActiveChips: React.FC<{ className?: string }>
 }
