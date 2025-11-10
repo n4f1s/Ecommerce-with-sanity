@@ -84,9 +84,14 @@ export const product = defineType({
       type: 'blockContent'
     }),
     defineField({
+      name: 'note',
+      title: 'Note',
+      type: 'string'
+    }),
+    defineField({
       name: 'previousPrice',
       title: 'Previous Price',
-      type: 'number',
+      type: 'number'
     }),
     defineField({
       name: 'price',
@@ -107,7 +112,7 @@ export const product = defineType({
       type: 'array',
       of: [{ type: 'productOption' }],
       description:
-        'Add option sets like Color, Size, Weight; leave empty if not applicable',
+        'Add option sets like Color, Size, Weight; leave empty if not applicable'
       // Typed array validation (no unions) to satisfy Rule.custom constraints
       // validation: Rule =>
       //   Rule.custom<ProductOption[]>(opts => {

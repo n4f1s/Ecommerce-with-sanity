@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Form from "next/form";
-import { Mail, MapPin, Phone, ShieldCheck, ArrowRight, Facebook, Instagram, Youtube, Twitter } from "lucide-react";
+import { Mail, MapPin, Phone, ShieldCheck} from "lucide-react";
+import Image from "next/image";
 
 const Footer = () => {
 
@@ -13,7 +13,7 @@ const Footer = () => {
       className="bg-white border-t border-gray-200 text-gray-700"
     >
       {/* Top CTA: newsletter */}
-      <section className="wrapper">
+      {/* <section className="wrapper">
         <div className="rounded-2xl border border-gray-200 bg-[#EFFFFA]">
           <div className="flex flex-col md:flex-row items-center gap-4 p-5">
             <div className="flex-1 text-center md:text-left">
@@ -44,22 +44,57 @@ const Footer = () => {
             </Form>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Link grid */}
       <nav className="wrapper" aria-label="Footer navigation">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
-            <Link href="/" className="text-xl font-extrabold text-theme-primary">ShopHikes</Link>
-            <p className="mt-3 text-sm text-gray-600">
+            <Link href="/" className="text-xl font-extrabold text-theme-primary">
+              ShopHikes
+            </Link>
+            <p className="mt-3 text-sm">
               Premium products for your everyday use.
             </p>
             <ul className="mt-4 space-y-2 text-sm">
-              <li className="flex items-center gap-2"><MapPin className="size-4" /> Dhaka, Bangladesh
+              {/* Address - opens Google Maps */}
+              <li>
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=106+BCC+Road+Nowabpur+Dhaka"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-gray-700 hover:text-theme-primary transition-colors group"
+                  aria-label="View our location on Google Maps"
+                >
+                  <MapPin className="size-4 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                  <span>106 BCC Road, Nowabpur, Dhaka</span>
+                </a>
               </li>
-              <li className="flex items-center gap-2"><Phone className="size-4" /> +880 0000 000000</li>
-              <li className="flex items-center gap-2"><Mail className="size-4" /> support@shophikes.com</li>
+
+              {/* Phone - opens dialer */}
+              <li>
+                <a
+                  href="tel:+8801884594333"
+                  className="flex items-center gap-2 text-gray-700 hover:text-theme-primary transition-colors group"
+                  aria-label="Call us at +880 1884 594 333"
+                >
+                  <Phone className="size-4 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                  <span>+880 1884 594 333</span>
+                </a>
+              </li>
+
+              {/* Email - opens mail client */}
+              <li>
+                <a
+                  href="mailto:support@shophikes.com"
+                  className="flex items-center gap-2 text-gray-700 hover:text-theme-primary transition-colors group"
+                  aria-label="Email us at support@shophikes.com"
+                >
+                  <Mail className="size-4 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                  <span>support@shophikes.com</span>
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -76,41 +111,77 @@ const Footer = () => {
           <div>
             <h4 className="text-sm font-semibold text-gray-900">Help</h4>
             <ul className="mt-3 space-y-2 text-sm">
-              <li><Link href="/shipping">Shipping info</Link></li>
-              <li><Link href="/returns">Returns & exchanges</Link></li>
-              <li><Link href="/support">Support center</Link></li>
-              <li><Link href="/track">Track order</Link></li>
+              <li><Link href="/shipping" className="hover:text-theme-primary">Shipping Info</Link></li>
+              <li>
+                <Link href="/return-refund-policy" className="hover:text-theme-primary">
+                  Return & Refund
+                </Link>
+              </li>
+              <li><Link href="/orders" className="hover:text-theme-primary">Track Order</Link></li>
             </ul>
           </div>
 
-          {/* Company */}
+          {/* Contact us */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-900">Company</h4>
-            <ul className="mt-3 space-y-2 text-sm">
-              <li><Link href="/about">About ShopHikes</Link></li>
-              <li><Link href="/careers">Careers</Link></li>
-              <li><Link href="/blog">Blog</Link></li>
-              <li><Link href="/contact">Contact</Link></li>
+            <h4 className="text-sm font-semibold text-gray-900">Contact Us</h4>
+
+            <ul className="mt-3 flex items-center gap-3">
+              {/* Facebook */}
+              <li>
+                <a
+                  href="https://www.facebook.com/shophikesfb"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Message us on Facebook"
+                  className="inline-flex size-12 items-center justify-center rounded-full bg-[#1877F2]/10 transition-colors text-white"
+                >
+                  <Image
+                    src="/fb.svg"
+                    width={30}
+                    height={30}
+                    alt="Facebook"
+                    priority={false}
+                  />
+                </a>
+              </li>
+
+              {/* WhatsApp (Bangladesh number) */}
+              <li>
+                <a
+                  href="https://wa.me/8801884594333"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Chat on WhatsApp"
+                  className="inline-flex size-12 items-center justify-center rounded-full bg-[#25D366]/10 
+                  text-[#25D366] transition-colors"
+                >
+                  <Image
+                    src="/whatsapp.svg"
+                    width={24}
+                    height={24}
+                    alt="Facebook"
+                    priority={false}
+                  />
+                </a>
+              </li>
             </ul>
+
+            {/* Helper text (optional) */}
+            <p className="mt-2 text-xs text-gray-500 max-w-[200px] text-justify">
+              Reach us on Facebook or WhatsApp. If the app isn’t installed, your browser will open instead.
+            </p>
           </div>
+
 
           {/* Trust & app */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-900">Trust & safety</h4>
+            <h4 className="text-sm font-semibold text-gray-900">Trust & Safety</h4>
             <ul className="mt-3 space-y-2 text-sm">
               <li className="flex items-center gap-2"><ShieldCheck className="size-4 text-theme-primary" /> SSL secured</li>
-              <li>7‑day easy returns</li>
+              <li>5‑7 day easy returns</li>
               <li>Cash on delivery</li>
               <li>Warranty on select items</li>
             </ul>
-
-            <h4 className="mt-6 text-sm font-semibold text-gray-900">Follow us</h4>
-            <div className="mt-3 flex gap-3 text-gray-600">
-              <Link aria-label="Facebook" href="https://facebook.com"><Facebook className="size-5 hover:text-theme-primary" /></Link>
-              <Link aria-label="Instagram" href="https://instagram.com"><Instagram className="size-5 hover:text-theme-primary" /></Link>
-              <Link aria-label="YouTube" href="https://youtube.com"><Youtube className="size-5 hover:text-theme-primary" /></Link>
-              <Link aria-label="Twitter" href="https://x.com"><Twitter className="size-5 hover:text-theme-primary" /></Link>
-            </div>
           </div>
         </div>
       </nav>
@@ -120,11 +191,9 @@ const Footer = () => {
         <div className="sm:px-16 px-4 max-w-[1500px] mx-auto py-4 text-xs text-gray-600 flex flex-col md:flex-row items-center justify-between gap-3">
           <p>© 2025 ShopHikes. All rights reserved.</p>
           <ul className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <li><Link href="/privacy">Privacy Policy</Link></li>
-            <li><Link href="/terms">Terms of Service</Link></li>
-            <li><Link href="/cookies">Cookie Preferences</Link></li>
+            <li><Link href="/privacy-policy">Privacy Policy</Link></li>
+            <li><Link href="/terms-of-service">Terms of Service</Link></li>
             <li><Link href="/sitemap.xml">Sitemap</Link></li>
-            <li><Link href="/accessibility">Accessibility</Link></li>
           </ul>
         </div>
       </div>

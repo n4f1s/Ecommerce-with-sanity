@@ -131,9 +131,15 @@
   @apply sm:px-16 px-4 py-10 sm:py-16 max-w-[1500px] w-full h-full mx-auto relative;
 }
 
-/* html {
-  data-scroll-behavior: smooth;
-} */
+html:focus-within {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+}
 
 /* [id] {
   scroll-margin-top: 80px;
@@ -218,3 +224,7 @@
   50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+
+
+
+

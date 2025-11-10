@@ -36,7 +36,12 @@ async function getAllCategoriesCached(): Promise<Category[]> {
         query: CATEGORIES_Q,
         params: {},
     })
-    return res.data ?? []
+    return (res.data ?? []).map((c) => ({
+        ...c,
+        title: c?.title ?? undefined,
+        description: c?.description ?? undefined,
+        slug: c?.slug ?? undefined,
+    })) as Category[]
 }
 
 // Single GROQ (filters + pagination + total) with caching and tags

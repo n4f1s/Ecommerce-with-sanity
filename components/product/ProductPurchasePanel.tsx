@@ -28,32 +28,44 @@ export default function ProductPurchasePanel({
 }: ProductPurchasePanelProps) {
   const router = useRouter();
   const { addItem } = useCartStore();
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  
+  const initialOptions = useMemo(() => {
+    const options: Record<string, string> = {};
+    if (!product.options) return options;
+
+    for (const option of product.options) {
+      const opt = option as { label?: string; name?: string; values?: unknown[] };
+      const optionName = opt?.label || opt?.name;
+      // Get the first value from the option's values array
+      const firstValue = opt?.values?.[0];
+
+      if (optionName && firstValue) {
+        const isString = typeof firstValue === 'string';
+        const vObj = !isString && typeof firstValue === 'object' && firstValue
+          ? (firstValue as { label?: string; name?: string })
+          : undefined;
+
+        // Determine the display value for the first option
+        const displayValue = isString
+          ? (firstValue as string)
+          : vObj?.label || vObj?.name || '';
+
+        if (displayValue) {
+          options[optionName] = displayValue;
+        }
+      }
+    }
+    return options;
+  }, [product.options]);
+
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(initialOptions);
+
 
   const price = product.price || 0;
   const previousPrice = product.previousPrice || 0;
   const discount = previousPrice > price ? previousPrice - price : 0;
 
   // Required option names (e.g., Color, Size)
-  const requiredOptionNames = useMemo(() => {
-    return (product.options ?? [])
-      .map((o) => {
-        if (!o || typeof o !== "object") return "";
-        const opt = o as { label?: string; name?: string };
-        return (opt.label || opt.name || "").trim();
-      })
-      .filter(Boolean);
-  }, [product.options]); // Inline validation is clearer than disabling CTAs, per PDP UX research.
-
-  const isOptionsComplete = useMemo(
-    () => requiredOptionNames.every((n) => !!selectedOptions[n]),
-    [requiredOptionNames, selectedOptions]
-  ); // Validate on click instead of disabling, to avoid “mystery disabled” buttons. [web:174][web:215]
-
-  const firstMissing = useMemo(
-    () => requiredOptionNames.find((n) => !selectedOptions[n]) || null,
-    [requiredOptionNames, selectedOptions]
-  ); // Used to guide attention to the exact missing choice. 
 
   const handleQuantityChange = (delta: number) => {
     const newQty = quantity + delta;
@@ -62,34 +74,13 @@ export default function ProductPurchasePanel({
     }
   }; // Standard PDP quantity controls with stock guard.
 
-  const guideToFirstMissing = () => {
-    if (!firstMissing) return;
-    const el = document.querySelector(
-      `[data-option-name="${CSS.escape(firstMissing)}"]`
-    );
-    if (el instanceof HTMLElement) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      const focusable = el.querySelector<HTMLElement>(
-        'button,[role="button"],[tabindex="0"],input,select'
-      );
-      focusable?.focus();
-    }
-  }; // On-click guidance: scroll and focus to missing option, improving error discoverability. 
 
   const handleAddToCart = () => {
-    if (!isOptionsComplete) {
-      guideToFirstMissing();
-      return;
-    }
     if (isOutOfStock) return;
     addItem(product, { selectedOptions, quantity });
   }; // Keep CTA enabled; validate at click to provide immediate, actionable feedback. 
 
   const handleOrderNow = () => {
-    if (!isOptionsComplete) {
-      guideToFirstMissing();
-      return;
-    }
     if (isOutOfStock) return;
     addItem(product, { selectedOptions, quantity });
     router.push("/cart");
@@ -126,7 +117,7 @@ export default function ProductPurchasePanel({
       </div>
 
       {/* Inline guidance near options (announced and visible) */}
-      {product.options?.length ? (
+      {/* {product.options?.length ? (
         !isOptionsComplete && (
           <p
             role="status"
@@ -136,7 +127,7 @@ export default function ProductPurchasePanel({
             Select {firstMissing ?? "all required options"} to continue.
           </p>
         )
-      ) : null} {/* Live region ensures assistive tech gets immediate guidance. [web:185][web:211] */}
+      ) : null}  */}
 
       {/* Product Options */}
       {product.options && product.options.length > 0 && (
@@ -168,12 +159,12 @@ export default function ProductPurchasePanel({
                     const vObj =
                       !isString && typeof value === "object" && value
                         ? (value as {
-                            _key?: string;
-                            label?: string;
-                            name?: string;
-                            image?: ImageType;
-                            _type?: string;
-                          })
+                          _key?: string;
+                          label?: string;
+                          name?: string;
+                          image?: ImageType;
+                          _type?: string;
+                        })
                         : undefined;
 
                     const displayValue = isString
@@ -186,8 +177,8 @@ export default function ProductPurchasePanel({
                         ? vObj.image
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         : (!isString && (value as any)?._type === "image"
-                            ? (value as ImageType)
-                            : undefined);
+                          ? (value as ImageType)
+                          : undefined);
 
                     const hasImage =
                       !!image && ((image).asset?._ref || (image).asset);
@@ -199,11 +190,10 @@ export default function ProductPurchasePanel({
                         onClick={() =>
                           handleOptionChange(optionName, displayValue, image!)
                         }
-                        className={`relative size-14 sm:size-24 aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                          selectedOptions[optionName] === displayValue
+                        className={`relative size-14 sm:size-24 aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedOptions[optionName] === displayValue
                             ? "border-theme-primary ring-2 ring-theme-primary ring-offset-2"
                             : "border-gray-200 hover:border-theme-secondary"
-                        }`}
+                          }`}
                         aria-pressed={selectedOptions[optionName] === displayValue}
                         aria-label={`${optionName}: ${displayValue}`}
                       >
@@ -221,11 +211,10 @@ export default function ProductPurchasePanel({
                         onClick={() =>
                           handleOptionChange(optionName, displayValue, null)
                         }
-                        className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${
-                          selectedOptions[optionName] === displayValue
+                        className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${selectedOptions[optionName] === displayValue
                             ? "border-theme-primary bg-theme-primary text-white"
                             : "border-gray-200 text-gray-700 hover:border-theme-primary"
-                        }`}
+                          }`}
                         aria-pressed={selectedOptions[optionName] === displayValue}
                         aria-label={`${optionName}: ${displayValue}`}
                       >
@@ -282,11 +271,11 @@ export default function ProductPurchasePanel({
 
       {/* Action Buttons (Enabled; validate on click) */}
       <div className="space-y-3">
-        {!isOptionsComplete && product.options?.length ? (
+        {/* {!isOptionsComplete && product.options?.length ? (
           <p role="status" aria-live="polite" className="text-xs text-gray-600">
             Select {firstMissing ?? "all required options"} to continue.
           </p>
-        ) : null}
+        ) : null} */}
         <button
           onClick={handleOrderNow}
           // Only disable for truly unavailable state (out of stock), not missing selections
@@ -303,7 +292,7 @@ export default function ProductPurchasePanel({
           <ShoppingCart className="w-5 h-5" />
           কার্টে নিন
         </button>
-      </div> 
+      </div>
     </div>
   );
 }

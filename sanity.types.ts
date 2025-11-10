@@ -133,6 +133,18 @@ export type Category = {
   title?: string;
   slug?: Slug;
   description?: string;
+  icon?: {
+    asset?: {
+      _ref: string;
+      _type: "reference";
+      _weak?: boolean;
+      [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+    };
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  };
 };
 
 export type Product = {
@@ -192,6 +204,7 @@ export type Product = {
   };
   description?: BlockContent;
   features?: BlockContent;
+  note?: string;
   previousPrice?: number;
   price?: number;
   categories?: Array<{
@@ -328,6 +341,98 @@ export type SanityAssetSourceData = {
 
 export type AllSanitySchemaTypes = OptionValue | ProductOption | Sale | Order | BlockContent | Category | Product | SanityImagePaletteSwatch | SanityImagePalette | SanityImageDimensions | SanityImageHotspot | SanityImageCrop | SanityFileAsset | SanityImageAsset | SanityImageMetadata | Geopoint | Slug | SanityAssetSourceData;
 export declare const internalGroqTypeReferenceTo: unique symbol;
+// Source: ./app/(store)/products/page.tsx
+// Variable: CATEGORIES_Q
+// Query: *[_type=="category"] | order(title asc){    _id, _type, _createdAt, _updatedAt, _rev, title, slug, description  }
+export type CATEGORIES_QResult = Array<{
+  _id: string;
+  _type: "category";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  title: string | null;
+  slug: Slug | null;
+  description: string | null;
+}>;
+// Variable: FILTERED_QUERY
+// Query: {      "items": *[        _type == "product" &&        (          !defined($categories) || count((categories[]->slug.current)[@ in $categories]) > 0        ) &&        (          (!defined($min) || price >= $min) && (!defined($max) || price <= $max)        )      ] | order(name asc) [$start...$end],      "total": count(*[        _type == "product" &&        (          !defined($categories) || count((categories[]->slug.current)[@ in $categories]) > 0        ) &&        (          (!defined($min) || price >= $min) && (!defined($max) || price <= $max)        )      ])    }
+export type FILTERED_QUERYResult = {
+  items: Array<{
+    _id: string;
+    _type: "product";
+    _createdAt: string;
+    _updatedAt: string;
+    _rev: string;
+    name?: string;
+    slug?: Slug;
+    image?: {
+      asset?: {
+        _ref: string;
+        _type: "reference";
+        _weak?: boolean;
+        [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+      };
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    };
+    productImages?: Array<{
+      asset?: {
+        _ref: string;
+        _type: "reference";
+        _weak?: boolean;
+        [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+      };
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+      _key: string;
+    }>;
+    file?: {
+      asset?: {
+        _ref: string;
+        _type: "reference";
+        _weak?: boolean;
+        [internalGroqTypeReferenceTo]?: "sanity.fileAsset";
+      };
+      media?: unknown;
+      _type: "file";
+    };
+    poster?: {
+      asset?: {
+        _ref: string;
+        _type: "reference";
+        _weak?: boolean;
+        [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+      };
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    };
+    description?: BlockContent;
+    features?: BlockContent;
+    note?: string;
+    previousPrice?: number;
+    price?: number;
+    categories?: Array<{
+      _ref: string;
+      _type: "reference";
+      _weak?: boolean;
+      _key: string;
+      [internalGroqTypeReferenceTo]?: "category";
+    }>;
+    options?: Array<{
+      _key: string;
+    } & ProductOption>;
+    featured?: boolean;
+    stock?: number;
+  }>;
+  total: number;
+};
+
 // Source: ./sanity/lib/products/getAllCategories.ts
 // Variable: ALL_CATEGORIES_QUERY
 // Query: *[            _type == "category"        ] | order(name asc)
@@ -340,6 +445,18 @@ export type ALL_CATEGORIES_QUERYResult = Array<{
   title?: string;
   slug?: Slug;
   description?: string;
+  icon?: {
+    asset?: {
+      _ref: string;
+      _type: "reference";
+      _weak?: boolean;
+      [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
+    };
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  };
 }>;
 
 // Source: ./sanity/lib/products/getAllProducts.ts
@@ -402,6 +519,7 @@ export type ALL_PRODUCTS_QUERYResult = Array<{
   };
   description?: BlockContent;
   features?: BlockContent;
+  note?: string;
   previousPrice?: number;
   price?: number;
   categories?: Array<{
@@ -478,6 +596,7 @@ export type PRODUCT_BY_SLUG_QUERYResult = {
   };
   description?: BlockContent;
   features?: BlockContent;
+  note?: string;
   previousPrice?: number;
   price?: number;
   categories?: Array<{
@@ -555,6 +674,7 @@ export type PRODUCT_BY_CATEGORY_QUERYResult = Array<{
   };
   description?: BlockContent;
   features?: BlockContent;
+  note?: string;
   previousPrice?: number;
   price?: number;
   categories?: Array<{
@@ -631,6 +751,7 @@ export type PRODUCT_SEARCH_QUERYResult = Array<{
   };
   description?: BlockContent;
   features?: BlockContent;
+  note?: string;
   previousPrice?: number;
   price?: number;
   categories?: Array<{
@@ -669,6 +790,8 @@ export type ACTIVE_SALE_BY_COUPON_QUERYResult = {
 import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
+    "*[_type==\"category\"] | order(title asc){\n    _id, _type, _createdAt, _updatedAt, _rev, title, slug, description\n  }": CATEGORIES_QResult;
+    "\n    {\n      \"items\": *[\n        _type == \"product\" &&\n        (\n          !defined($categories) || count((categories[]->slug.current)[@ in $categories]) > 0\n        ) &&\n        (\n          (!defined($min) || price >= $min) && (!defined($max) || price <= $max)\n        )\n      ] | order(name asc) [$start...$end],\n      \"total\": count(*[\n        _type == \"product\" &&\n        (\n          !defined($categories) || count((categories[]->slug.current)[@ in $categories]) > 0\n        ) &&\n        (\n          (!defined($min) || price >= $min) && (!defined($max) || price <= $max)\n        )\n      ])\n    }\n  ": FILTERED_QUERYResult;
     "\n        *[\n            _type == \"category\"\n        ] | order(name asc)\n    ": ALL_CATEGORIES_QUERYResult;
     "\n        *[\n            _type == \"product\"\n        ] | order(name asc)\n    ": ALL_PRODUCTS_QUERYResult;
     "\n    *[_type == \"product\" && slug.current == $slug][0]{\n      ...,\n      // Flattened video URL for simple consumption in React/TS\n      \"videoUrl\": file.asset->url,\n    }\n  ": PRODUCT_BY_SLUG_QUERYResult;

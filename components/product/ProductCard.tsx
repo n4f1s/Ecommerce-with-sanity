@@ -6,14 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 
-type SanityChild = {
-    _type: "span";
-    _key: string;
-    text?: string;
-    marks?: string[];
-};
-
-function ProductThumb({ product }: { product: Product }) {
+function ProductCard({ product }: { product: Product }) {
     const isOutOfStock = product.stock != null && product.stock <= 0;
 
     return (
@@ -47,30 +40,23 @@ function ProductThumb({ product }: { product: Product }) {
             </div>
 
             <div className="p-4">
-                <h2 className="text-lg font-semibold text-gray-800 truncate">
+                <h2 className="text-base font-semibold text-gray-800 line-clamp-2">
                     {product.name}
                 </h2>
 
-                <div className="mt-2 text-sm text-gray-600 line-clamp-2">
-                    {product.description && Array.isArray(product.description)
-                        ? product.description
-                            .map((block) =>
-                                block._type === "block"
-                                    ? block.children
-                                        ?.map((child: SanityChild) => child.text ?? "")
-                                        .join("") ?? ""
-                                    : ""
-                            )
-                            .join(" ")
-                        : "No description available."}
+                <div className="flex mt-2">
+                    <p className="text-lg font-bold text-theme-primary">
+                        Tk {product.price}
+                    </p>
+                    {typeof product.previousPrice === "number" && product.previousPrice > (product.price ?? 0) && (
+                        <div className="ml-2 text-xs sm:text-sm text-gray-500 line-through">
+                            Tk {product.previousPrice}
+                        </div>
+                    )}
                 </div>
-
-                <p className="mt-2 text-lg font-bold text-theme-primary">
-                    Tk {product.price}
-                </p>
             </div>
         </Link>
     );
 }
 
-export default ProductThumb;
+export default ProductCard;

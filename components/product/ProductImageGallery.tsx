@@ -166,6 +166,7 @@ export default function ProductImageGallery({
                     preload="metadata"
                     controls
                     playsInline
+                    autoPlay
                   >
                     <source src={slide.src} type="video/mp4" />
                   </video>

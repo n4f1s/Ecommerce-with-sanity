@@ -2,13 +2,14 @@ import HeroBanner from "@/components/common/HeroBanner"
 import BlackFridayBanner from "@/components/common/BlackFridayBanner"
 import ProductCard from "@/components/product/ProductCard"
 import Link from "next/link"
-import { ArrowRight, Sparkles, TrendingUp } from "lucide-react"
+import { ArrowRight, Search, Sparkles, TrendingUp } from "lucide-react"
 import type { Product, Category } from "@/sanity.types"
 
 import { getAllProducts } from "@/sanity/lib/products/getAllProducts"
 import { getAllCategories } from "@/sanity/lib/products/getAllCategories"
 import Image from "next/image"
 import { urlFor } from "@/sanity/lib/image"
+import Testimonials from "@/components/common/Testimonials"
 
 export const dynamic = "force-static"
 export const revalidate = 600
@@ -27,12 +28,12 @@ export default async function Home() {
 
   const featured: Product[] = products
     .filter((product) => product.featured === true)
-  // .sort((a, b) => {
-  //   const da = Date.parse(a._createdAt || "")
-  //   const db = Date.parse(b._createdAt || "")
-  //   return isNaN(db) && isNaN(da) ? 0 : (db || 0) - (da || 0)
-  // })
-  // .slice(0, 2)
+  .sort((a, b) => {
+    const da = Date.parse(a._createdAt || "")
+    const db = Date.parse(b._createdAt || "")
+    return isNaN(db) && isNaN(da) ? 0 : (db || 0) - (da || 0)
+  })
+  .slice(0, 4)
 
   const latest: Product[] = [...products]
     .sort((a, b) => {
@@ -64,21 +65,44 @@ export default async function Home() {
               </h2>
               <p className="text-gray-600 text-sm sm:text-base">Find exactly what you&apos;re looking for</p>
             </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
               {cats.slice(0, 6).map((cat) => {
                 const slug = cat.slug?.current ?? ""
                 const title = (cat.title ?? slug) || "Category"
+                const hasIcon = Boolean(cat.icon)
+
                 return (
                   <Link
                     key={cat._id}
                     href={slug ? `/products?category=${encodeURIComponent(slug)}` : "/products"}
                     className="group relative rounded-xl bg-white border border-gray-200 p-6 text-center hover:border-theme-primary hover:shadow-lg transition-all duration-300 overflow-hidden"
+                    aria-label={`Explore ${title}`}
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-theme-primary/5 to-theme-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
                     <div className="relative z-10">
-                      <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-theme-primary/10 to-theme-secondary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <div className="w-6 h-6 rounded-full bg-theme-primary/20" />
+                      {/* Icon circle */}
+                      <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-theme-primary/10 to-theme-secondary/10 flex items-center justify-center">
+                        {hasIcon ? (
+                          <span className="relative inline-block size-12 rounded overflow-hidden">
+                            <Image
+                              src={
+                                cat.icon
+                                  ? urlFor(cat.icon).format("webp").width(64).height(64).bg("ffffff").url()
+                                  : "/placeholder.webp"
+                              }
+                              alt={`${title} icon`}
+                              fill
+                              className="object-cover"
+                              loading="lazy"
+                            />
+                          </span>
+                        ) : (
+                          <Search className="h-4 w-4 text-theme-primary" />
+                        )}
                       </div>
+
                       <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-1 group-hover:text-theme-primary transition-colors">
                         {title}
                       </h3>
@@ -96,7 +120,7 @@ export default async function Home() {
 
       {/* Featured Products - Hero treatment */}
       {hasFeatured && (
-        <section aria-labelledby="featured-heading" className="bg-white py-10 sm:py-12">
+        <section id="featured" aria-labelledby="featured-heading" className="bg-white">
           <div className="wrapper">
             {/* Header */}
             <div className="mb-8 sm:mb-10 flex items-center justify-between">
@@ -139,10 +163,10 @@ export default async function Home() {
                   )}
 
                   {/* Card body: image + content split */}
-                  <div className="grid grid-cols-2 w-full h-full">
+                  <div className="grid grid-cols-2 w-full h-full gap-2">
                     {/* Product visual */}
                     <div className="relative h-full">
-                      <div className="absolute inset-0 p-4 sm:p-5">
+                      <div className="absolute inset-0 py-4 pl-1 sm:p-5">
                         <div className="relative h-full w-full rounded-xl overflow-hidden bg-white">
                           <Image
                             src={
@@ -160,25 +184,11 @@ export default async function Home() {
                       </div>
                     </div>
                     {/* Meta + CTA rail (compact) */}
-                    <div className="flex flex-col justify-between p-5 sm:p-6 gap-20">
+                    <div className="flex flex-col justify-between py-5 pr-5 sm:p-6 gap-20">
                       <div className="mt-4">
                         <h3 className="text-base sm:text-lg font-semibold text-gray-800">
                           {product.name ?? "Product"}
                         </h3>
-
-                        {/* <div className="mt-2 text-sm text-gray-600 line-clamp-4">
-                          {product.description && Array.isArray(product.description)
-                            ? product.description
-                              .map((block) =>
-                                block._type === "block"
-                                  ? block.children
-                                    ?.map((child: SanityChild) => child.text ?? "")
-                                    .join("") ?? ""
-                                  : ""
-                              )
-                              .join(" ")
-                            : "No description available."}
-                        </div> */}
                       </div>
 
                       {/* Price + CTA */}
@@ -195,7 +205,7 @@ export default async function Home() {
                         </div>
                         <Link
                           href={`/products/${product.slug?.current ?? product._id}`}
-                          className="group inline-flex items-center gap-2 rounded-full bg-theme-primary px-4 py-2 text-xs sm:text-sm font-semibold text-white transition-colors duration-300 hover:bg-theme-secondary"
+                          className="group inline-flex items-center gap-2 rounded-full bg-theme-primary px-2 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm font-semibold text-white transition-colors duration-300 hover:bg-theme-secondary"
                           aria-label={`View ${product.name ?? "product"}`}
                         >
                           View
@@ -275,6 +285,8 @@ export default async function Home() {
         </div>
       </section>
 
+      <Testimonials />
+
       {/* <section className="py-12 sm:py-16 bg-gradient-to-br from-[#1e3a8a] via-[#2563eb] to-[#0ea5e9]"></section> */}
 
       {/* CTA Section - Strong visual anchor */}
@@ -289,10 +301,10 @@ export default async function Home() {
             </p>
             <Link
               href="/products"
-              className="inline-flex items-center gap-2 bg-white text-theme-primary font-semibold px-8 py-4 rounded-full hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl hover:scale-105 transform duration-300 text-sm sm:text-base"
+              className="group inline-flex items-center gap-2 bg-white text-theme-primary font-semibold px-8 py-4 rounded-full hover:bg-gray-100 text-sm sm:text-base"
             >
               View All Products
-              <ArrowRight className="size-3 sm:size-5" />
+              <ArrowRight className="size-3 sm:size-5 group-hover:translate-x-2 transition-all transform duration-200" />
             </Link>
           </div>
         </div>

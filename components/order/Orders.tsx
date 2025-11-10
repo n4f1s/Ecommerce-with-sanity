@@ -3,7 +3,7 @@
 import useOrderStore from "@/store/order-store";
 import { Package, Phone, MapPin, CreditCard, Calendar, FileText, Truck, File } from "lucide-react";
 import OrderStatusStepper from "./OrderStatusStepper";
-import { useOrderStatusSync } from "@/hooks/hooks/useOrderStatusSync";
+import { useOrderStatusSync } from "@/hooks/useOrderStatusSync";
 import Link from "next/link";
 
 

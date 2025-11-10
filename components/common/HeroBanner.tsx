@@ -3,16 +3,9 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function HeroBanner() {
-    const handleScroll = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.preventDefault();
-        const section = document.getElementById("products");
-        if (section) {
-            section.scrollIntoView({ behavior: "smooth" });
-        }
-    };
-
 
     return (
         <section className="relative bg-gradient-to-br from-theme-primary/90 to-orange-500 text-white overflow-hidden">
@@ -26,16 +19,17 @@ export default function HeroBanner() {
                     className="max-w-xl text-center lg:text-left"
                 >
                     <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-6">
-                        সেরা পণ্যসমূহ আপনার দোরগোড়ায়
+                        The Best Products at Your Doorstep
                     </h1>
 
                     <p className="text-lg sm:text-xl text-white/80 mb-8 leading-relaxed">
-                        বিশেষ মূল্য, দারুণ অফার এবং গুণগত মানের নিশ্চয়তা — এখনই অনলাইনে অর্ডার করুন
-                        এবং দ্রুততম সময়ে পণ্য বুঝে নিন। দ্রুত ডেলিভারি। ক্যাশ অন ডেলিভারি সুবিধা।
+                        Experience seamless online shopping with our handpicked selection of premium goods. Enjoy fast, reliable delivery and pay with cash on delivery.
                     </p>
 
-                    <Button onClick={handleScroll} className="text-lg">
-                        কালেকশন দেখুন
+                    <Button className="text-lg">
+                        <Link href="/products">
+                            Shop Now
+                        </Link>
                     </Button>
                 </motion.div>
 
