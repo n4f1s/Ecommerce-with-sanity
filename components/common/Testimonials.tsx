@@ -34,7 +34,7 @@ export default function Testimonials() {
       {
         id: "t2",
         name: "Mohaiminur Rahman",
-        location: "Chattogram",
+        location: "Khulna",
         avatar: "/testimonial2.jpg",
         rating: 5,
         text: "Great pricing and solid packaging. Order arrived earlier than expected!",
@@ -88,7 +88,7 @@ export default function Testimonials() {
       {
         id: "t8",
         name: "Hasan Mahmud",
-        location: "Mymensingh",
+        location: "Chattogram",
         avatar: "/testimonial8.jpg",
         rating: 5,
         text: "Amazing deals and easy returns. The posture corrector strap really works. Impressed!",

@@ -167,6 +167,7 @@ export default function ProductImageGallery({
                     controls
                     playsInline
                     autoPlay
+                    muted
                   >
                     <source src={slide.src} type="video/mp4" />
                   </video>
