@@ -3,6 +3,8 @@ import { SanityLive } from "@/sanity/lib/live";
 import "./globals.css";
 import ToastProvider from "@/providers/ToastProvider";
 import ScrollToTop from "@/components/layout/ScrollToTop";
+import { GoogleTagManager } from '@next/third-parties/google'
+
 
 export const metadata: Metadata = {
   title: "ShopHikes | Online Shopping in Bangladesh",
@@ -44,6 +46,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <GoogleTagManager gtmId="GTM-5KZM98ZZ" />
       <body>
         <ToastProvider />
         <main>
