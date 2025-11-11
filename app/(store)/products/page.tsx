@@ -263,7 +263,8 @@ export default async function ProductsPage({
                 <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6 lg:gap-8">
                     {/* Desktop sidebar */}
                     <aside className="hidden md:block">
-                        <div className="sticky top-24 space-y-6">
+                        {/* sticky top-24 */}
+                        <div className="space-y-6">
                             <Filters initialState={sp} categories={categories} />
                         </div>
                     </aside>

@@ -7,6 +7,7 @@ import useCartStore from "@/store/cart-store";
 import Image from "next/image";
 import { urlFor } from "@/sanity/lib/image";
 import { useRouter } from "next/navigation";
+import { useTrackButtonClick } from "@/hooks/useTrackButtonClick";
 
 type ImageType = NonNullable<Product["image"]>;
 type MaybeImage = ImageType | null;
@@ -28,7 +29,8 @@ export default function ProductPurchasePanel({
 }: ProductPurchasePanelProps) {
   const router = useRouter();
   const { addItem } = useCartStore();
-  
+  const trackClick = useTrackButtonClick("product-purchase-panel");
+
   const initialOptions = useMemo(() => {
     const options: Record<string, string> = {};
     if (!product.options) return options;
@@ -71,20 +73,43 @@ export default function ProductPurchasePanel({
     const newQty = quantity + delta;
     if (newQty >= 1 && (product.stock === undefined || newQty <= product.stock)) {
       setQuantity(newQty);
+      trackClick("qty_change", {
+        item_id: product.slug?.current ?? product._id ?? "unknown",
+        item_name: product.name ?? "product",
+        placement: "pdp_qty_control",
+        from_qty: quantity,
+        to_qty: newQty,
+      });
     }
-  }; // Standard PDP quantity controls with stock guard.
+  };
 
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
     addItem(product, { selectedOptions, quantity });
-  }; // Keep CTA enabled; validate at click to provide immediate, actionable feedback. 
+    trackClick("add_to_cart_click", {
+      item_id: product.slug?.current ?? product._id ?? "unknown",
+      item_name: product.name ?? "product",
+      placement: "pdp_primary_cta",
+      quantity,
+      has_discount: discount > 0,
+    });
+  };
 
   const handleOrderNow = () => {
     if (isOutOfStock) return;
     addItem(product, { selectedOptions, quantity });
+
+    trackClick("buy_now_click", {
+      item_id: product.slug?.current ?? product._id ?? "unknown",
+      item_name: product.name ?? "product",
+      placement: "pdp_primary_cta",
+      quantity,
+      has_discount: discount > 0,
+    });
+
     router.push("/cart");
-  }; // Mirrored behavior for buy-now to reduce friction and errors. 
+  };
 
   const handleOptionChange = (
     optionName: string,
@@ -93,6 +118,14 @@ export default function ProductPurchasePanel({
   ) => {
     setSelectedImage(image ?? null);
     setSelectedOptions((prev) => ({ ...prev, [optionName]: value }));
+
+    trackClick("variant_select", {
+      item_id: product.slug?.current ?? product._id ?? "unknown",
+      item_name: product.name ?? "product",
+      placement: "pdp_options",
+      option_name: optionName,
+      option_value: value,
+    });
   }; // Syncs selected image and chosen variant value per option.
 
   return (
@@ -191,8 +224,8 @@ export default function ProductPurchasePanel({
                           handleOptionChange(optionName, displayValue, image!)
                         }
                         className={`relative size-14 sm:size-24 aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedOptions[optionName] === displayValue
-                            ? "border-theme-primary ring-2 ring-theme-primary ring-offset-2"
-                            : "border-gray-200 hover:border-theme-secondary"
+                          ? "border-theme-primary ring-2 ring-theme-primary ring-offset-2"
+                          : "border-gray-200 hover:border-theme-secondary"
                           }`}
                         aria-pressed={selectedOptions[optionName] === displayValue}
                         aria-label={`${optionName}: ${displayValue}`}
@@ -201,6 +234,7 @@ export default function ProductPurchasePanel({
                           src={urlFor(image!).width(200).format("webp").url()}
                           alt={String(displayValue)}
                           fill
+                          sizes="200px"
                           className="object-cover"
                         />
                       </button>
@@ -212,8 +246,8 @@ export default function ProductPurchasePanel({
                           handleOptionChange(optionName, displayValue, null)
                         }
                         className={`px-4 py-2 border-2 rounded-lg font-medium transition-all ${selectedOptions[optionName] === displayValue
-                            ? "border-theme-primary bg-theme-primary text-white"
-                            : "border-gray-200 text-gray-700 hover:border-theme-primary"
+                          ? "border-theme-primary bg-theme-primary text-white"
+                          : "border-gray-200 text-gray-700 hover:border-theme-primary"
                           }`}
                         aria-pressed={selectedOptions[optionName] === displayValue}
                         aria-label={`${optionName}: ${displayValue}`}

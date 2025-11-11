@@ -6,6 +6,7 @@ import { PortableText, PortableTextComponents } from "next-sanity";
 import { urlFor } from "@/sanity/lib/image";
 import { Product } from "@/sanity.types";
 import Image from "next/image";
+import { useTrackButtonClick } from "@/hooks/useTrackButtonClick";
 
 interface ProductDetailTabsProps {
     product: Product;
@@ -31,38 +32,60 @@ export default function ProductDetailTabs({ product }: ProductDetailTabsProps) {
     const [activeTab, setActiveTab] = useState<"description" | "delivery">(
         "description"
     );
+    const trackClick = useTrackButtonClick("product-details-page");
 
     return (
         <div className="mt-10 overflow-hidden">
+
             {/* --- Tab Buttons --- */}
             <div className="flex gap-4 mb-6">
                 <button
-                    onClick={() => setActiveTab("description")}
+                    data-gtm="pdp_tab_description"
+                    onClick={() => {
+                        trackClick("pdp_tab_click", {
+                            tab: "description",
+                            placement: "pdp_tabs",
+                            item_id: product?.slug?.current ?? product?._id ?? "unknown",
+                            item_name: product?.name ?? "product",
+                        }); 
+                        setActiveTab("description");
+                    }}
                     className={`
-                        relative pb-2 text-lg font-semibold transition-colors duration-300 bg-gray-200 px-4 py-2 rounded cursor-pointer
-                        ${activeTab === "description" ? "text-theme-primary" : "text-gray-600 hover:text-theme-primary"}
-                        after:absolute after:bottom-0 after:left-0 after:h-[2px]
-                        after:bg-theme-primary after:transition-all after:duration-300
-                        after:ease-in-out
-                        ${activeTab === "description" ? "after:w-full" : "after:w-0 hover:after:w-full"}
+                    relative pb-2 text-lg font-semibold transition-colors duration-300 bg-gray-200 px-4 py-2 rounded cursor-pointer
+                    ${activeTab === "description" ? "text-theme-primary" : "text-gray-600 hover:text-theme-primary"}
+                    after:absolute after:bottom-0 after:left-0 after:h-[2px]
+                    after:bg-theme-primary after:transition-all after:duration-300
+                    after:ease-in-out
+                    ${activeTab === "description" ? "after:w-full" : "after:w-0 hover:after:w-full"}
                     `}
                 >
                     পণ্যের বিবরণ
                 </button>
+
                 <button
-                    onClick={() => setActiveTab("delivery")}
+                    data-gtm="pdp_tab_delivery"
+                    onClick={() => {
+                        trackClick("pdp_tab_click", {
+                            tab: "delivery",
+                            placement: "pdp_tabs",
+                            item_id: product?.slug?.current ?? product?._id ?? "unknown",
+                            item_name: product?.name ?? "product",
+                        }); 
+                        setActiveTab("delivery");
+                    }}
                     className={`
-                        relative pb-2 text-lg font-semibold transition-colors duration-300 bg-gray-200 px-4 py-2 rounded cursor-pointer
-                        ${activeTab === "delivery" ? "text-theme-primary" : "text-gray-600 hover:text-theme-primary"}
-                        after:absolute after:bottom-0 after:left-0 after:h-[2px]
-                        after:bg-theme-primary after:transition-all after:duration-300
-                        after:ease-in-out
-                        ${activeTab === "delivery" ? "after:w-full" : "after:w-0 hover:after:w-full"}
+                    relative pb-2 text-lg font-semibold transition-colors duration-300 bg-gray-200 px-4 py-2 rounded cursor-pointer
+                    ${activeTab === "delivery" ? "text-theme-primary" : "text-gray-600 hover:text-theme-primary"}
+                    after:absolute after:bottom-0 after:left-0 after:h-[2px]
+                    after:bg-theme-primary after:transition-all after:duration-300
+                    after:ease-in-out
+                    ${activeTab === "delivery" ? "after:w-full" : "after:w-0 hover:after:w-full"}
                     `}
                 >
                     ডেলিভারি পলিসি
                 </button>
             </div>
+
 
             {/* --- Animated Content --- */}
             <div className="w-full min-h-[500px]">

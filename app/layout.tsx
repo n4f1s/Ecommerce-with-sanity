@@ -44,9 +44,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const isProd = process.env.NODE_ENV === "production";
+
   return (
     <html lang="en">
-      <GoogleTagManager gtmId="GTM-5KZM98ZZ" />
+      {isProd ? <GoogleTagManager gtmId="GTM-5KZM98ZZ" /> : null}
       <body>
         <ToastProvider />
         <main>

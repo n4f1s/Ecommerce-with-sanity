@@ -6,6 +6,7 @@ import useOrderStore from "@/store/order-store";
 import toast from "react-hot-toast";
 import { useBDLocations } from "@/hooks/useLocations";
 import { Product } from "@/sanity.types";
+import { useTrackButtonClick } from "@/hooks/useTrackButtonClick";
 
 interface ShippingAddressFormProps {
   onSuccess?: () => void;
@@ -32,6 +33,7 @@ export default function ShippingAddressForm({
 }: ShippingAddressFormProps) {
   const { getGroupedItems, getTotalPrice, clearCart } = useCartStore();
   const { addOrder, getLastOrder } = useOrderStore();
+  const trackClick = useTrackButtonClick("product-purchase-panel");
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -105,6 +107,16 @@ export default function ShippingAddressForm({
       }
     }
   }, [upazilas, formData.districtId, formData.upazilaId, formData.upazilaName]);
+
+  // helper: map line items into a lightweight GA4-friendly array
+  const mapItemsForAnalytics = (items: Array<{ id?: string; slug?: { current?: string }; name?: string; price?: number; quantity?: number }>) => {
+    return items.map((it) => ({
+      item_id: it.slug?.current ?? it.id ?? "unknown",
+      item_name: it.name ?? "product",
+      price: typeof it.price === "number" ? it.price : undefined,
+      quantity: typeof it.quantity === "number" ? it.quantity : undefined,
+    }));
+  };
 
   // Compute delivery charge by division name
   const deliveryCharge = useMemo(() => {
@@ -216,6 +228,18 @@ export default function ShippingAddressForm({
       const rawItems = getGroupedItems();
       const itemsForApi = mapItemsForOrder(rawItems);
 
+      const subTotal = getTotalPrice();
+      const delivery = deliveryCharge || 0;
+      const grandTotal = subTotal + delivery;
+
+      // 1) Track user intent to purchase (before API)
+      trackClick("begin_checkout", {
+        placement: "checkout_form_submit",
+        value: grandTotal,
+        currency: "BDT",
+        item_count: rawItems?.reduce((acc, it) => acc + (it.quantity || 0), 0) || undefined,
+      });
+
       const res = await fetch("/api/orders/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -231,7 +255,7 @@ export default function ShippingAddressForm({
           deliveryInstruction: formData.deliveryInstruction,
           items: itemsForApi,
           deliveryCharge: deliveryCharge,
-          totalPrice: getTotalPrice() + deliveryCharge,
+          totalPrice: grandTotal,
         }),
       });
 
@@ -262,6 +286,16 @@ export default function ShippingAddressForm({
         return;
       }
 
+            // 5) Success path: record a client-side success marker
+      // Note: For true ecommerce revenue reporting, also send a GA4 'purchase' via GTM on the Thank You page
+      trackClick("purchase_success", {
+        placement: "checkout_form_submit",
+        value: grandTotal,
+        currency: "BDT",
+        order_id: data.orderNumber,
+        items: JSON.stringify(mapItemsForAnalytics(rawItems)),
+      });
+
       // Success - Save order to local store
       addOrder({
         id: data.orderNumber,
@@ -276,7 +310,7 @@ export default function ShippingAddressForm({
         postalCode: formData.postalCode,
         deliveryInstruction: formData.deliveryInstruction,
         items: rawItems,
-        totalPrice: getTotalPrice() + deliveryCharge,
+        totalPrice: grandTotal,
         paymentMethod: "Cash on Delivery",
         status: "pending",
         orderDate: formatDate(new Date()),

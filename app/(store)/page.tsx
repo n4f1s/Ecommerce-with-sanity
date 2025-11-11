@@ -94,6 +94,7 @@ export default async function Home() {
                               }
                               alt={`${title} icon`}
                               fill
+                              sizes="64px"
                               className="object-cover"
                               loading="lazy"
                             />

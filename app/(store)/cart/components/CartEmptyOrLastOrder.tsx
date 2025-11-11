@@ -244,7 +244,7 @@ export default function CartEmptyOrLastOrder() {
           Looks like you haven&apos;t added any items to your cart yet.
         </p>
         <Button
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/products")}
           size="lg"
           className="px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
         >
