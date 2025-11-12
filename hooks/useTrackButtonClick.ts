@@ -6,47 +6,52 @@ import { sendGAEvent } from "@next/third-parties/google";
 type ExtraParams = Record<string, string | number | boolean | null | undefined>;
 
 export function useTrackButtonClick(defaultCategory = "engagement") {
-  // Ensure we only fire after client mount so GA has a chance to initialize
-  const ready = useRef(false);
+  // This ref will be true only after the component has mounted and a short delay has passed.
+  const isReady = useRef(false);
+
   useEffect(() => {
-    ready.current = true;
+    // Set ready to true after a short delay to give GTM/GA time to initialize.
+    const timer = setTimeout(() => {
+      isReady.current = true;
+    }, 100); // 100ms is usually plenty.
+
+    return () => clearTimeout(timer); // Cleanup on unmount
   }, []);
 
   // De-dupe rapid double clicks
-  const last = useRef<{ name: string; t: number } | null>(null);
+  const lastClick = useRef<{ name: string; t: number } | null>(null);
 
   return useCallback(
     (buttonName: string, extraParams: ExtraParams = {}) => {
-      if (!buttonName) return;
-      if (!ready.current) return; // prevent '@next/third-parties: GA has not been initialized'
-
-      // ignore repeated clicks within 400ms
-      const now = Date.now();
-      if (last.current && last.current.name === buttonName && now - last.current.t < 400) {
+      // 1. Exit if the hook isn't ready or if there's no button name.
+      if (!isReady.current || !buttonName) {
+        // This will prevent the "GA has not been initialized" error.
         return;
       }
-      last.current = { name: buttonName, t: now };
 
-      // Page context
-      const pageLocation = typeof window !== "undefined" ? window.location.href : undefined;
-      const pagePath = typeof window !== "undefined" ? window.location.pathname : undefined;
-      const pageTitle = typeof document !== "undefined" ? document.title : undefined;
+      // 2. Ignore repeated clicks within 400ms
+      const now = Date.now();
+      if (lastClick.current && lastClick.current.name === buttonName && now - lastClick.current.t < 400) {
+        return;
+      }
+      lastClick.current = { name: buttonName, t: now };
 
-      // Never send PII (email, phone, full names, raw IP)
+      // 3. Prepare parameters (no PII)
       const params: ExtraParams = {
-        button_label: buttonName,           // stable, human-readable label
-        button_category: defaultCategory,   
-        page_location: pageLocation,
-        page_path: pagePath,
-        page_title: pageTitle,
-        ...extraParams,                     // item_id, item_name, placement, etc.
+        button_label: buttonName,
+        button_category: defaultCategory,
+        page_location: window.location.href,
+        page_path: window.location.pathname,
+        page_title: document.title,
+        ...extraParams,
       };
 
-      // Dispatch to the Google tag (works with GTM or inline gtag)
+      // 4. Dispatch the event safely.
       try {
         sendGAEvent("event", "button_click", params);
-      } catch {
-        // Silently ignore if GA is not ready to avoid runtime errors during dev
+      } catch (error) {
+        // Silently fail if something still goes wrong, preventing a crash.
+        console.error("Failed to send GA event:", error);
       }
     },
     [defaultCategory]

@@ -42,7 +42,9 @@ ecommerce-with-sanity
 │  ├─ (store)
 │  │  ├─ cart
 │  │  │  ├─ components
-│  │  │  │  └─ CartEmptyOrLastOrder.tsx
+│  │  │  │  ├─ CartEmptyOrLastOrder.tsx
+│  │  │  │  ├─ DrawerSheet.tsx
+│  │  │  │  └─ MobileSummaryBar.tsx
 │  │  │  ├─ loading.tsx
 │  │  │  └─ page.tsx
 │  │  ├─ categories
@@ -55,19 +57,31 @@ ecommerce-with-sanity
 │  │  ├─ orders
 │  │  │  └─ page.tsx
 │  │  ├─ page.tsx
-│  │  ├─ product
+│  │  ├─ privacy-policy
+│  │  │  └─ page.tsx
+│  │  ├─ products
+│  │  │  ├─ page.tsx
 │  │  │  └─ [slug]
 │  │  │     ├─ error.tsx
 │  │  │     ├─ loading.tsx
 │  │  │     └─ page.tsx
-│  │  └─ search
-│  │     ├─ loading.tsx
+│  │  ├─ return-refund-policy
+│  │  │  └─ page.tsx
+│  │  ├─ search
+│  │  │  ├─ loading.tsx
+│  │  │  └─ page.tsx
+│  │  ├─ shipping
+│  │  │  └─ page.tsx
+│  │  └─ terms-of-service
 │  │     └─ page.tsx
 │  ├─ api
-│  │  └─ orders
-│  │     ├─ create-order
-│  │     │  └─ route.ts
-│  │     └─ sync-status
+│  │  ├─ orders
+│  │  │  ├─ create-order
+│  │  │  │  └─ route.ts
+│  │  │  └─ sync-status
+│  │  │     └─ route.ts
+│  │  └─ search
+│  │     └─ bootstrap
 │  │        └─ route.ts
 │  ├─ error.tsx
 │  ├─ favicon.ico
@@ -81,11 +95,14 @@ ecommerce-with-sanity
 ├─ components
 │  ├─ common
 │  │  ├─ BlackFridayBanner.tsx
-│  │  ├─ category-selector.tsx
+│  │  ├─ ClientCounts.tsx
 │  │  ├─ HeroBanner.tsx
 │  │  ├─ loader.tsx
-│  │  └─ ProductsSection.tsx
+│  │  ├─ MobileNav.tsx
+│  │  ├─ ProductsSection.tsx
+│  │  └─ Testimonials.tsx
 │  ├─ layout
+│  │  ├─ Breadcrumb.tsx
 │  │  ├─ Footer.tsx
 │  │  ├─ Header.tsx
 │  │  └─ ScrollToTop.tsx
@@ -97,27 +114,40 @@ ecommerce-with-sanity
 │  ├─ product
 │  │  ├─ AddToCartButton.tsx
 │  │  ├─ AddToCartQuantity.tsx
+│  │  ├─ ColorVariantModal.tsx
+│  │  ├─ Filters.tsx
 │  │  ├─ ProductCard.tsx
+│  │  ├─ ProductDetailSection.tsx
 │  │  ├─ ProductDetailTabs.tsx
 │  │  ├─ ProductGrid.tsx
 │  │  ├─ ProductImageGallery.tsx
+│  │  ├─ ProductInfo.tsx
+│  │  ├─ ProductPurchasePanel.tsx
 │  │  └─ ProductsView.tsx
+│  ├─ search
+│  │  ├─ getSearchBootstrap.ts
+│  │  └─ MobileSearchModal.tsx
 │  ├─ ui
 │  │  ├─ button.tsx
+│  │  ├─ checkbox.tsx
 │  │  ├─ command.tsx
 │  │  ├─ dialog.tsx
+│  │  ├─ input.tsx
+│  │  ├─ label.tsx
 │  │  └─ popover.tsx
 │  └─ unUsed
+│     ├─ category-selector.tsx
 │     ├─ CheckoutButtonWithModal.tsx
-│     └─ CheckoutModal.tsx
+│     ├─ CheckoutModal.tsx
+│     └─ loading.tsx
 ├─ components.json
 ├─ data
 │  └─ locations.json
 ├─ eslint.config.mjs
 ├─ hooks
-│  ├─ hooks
-│  │  └─ useOrderStatusSync.ts
-│  └─ useLocations.ts
+│  ├─ useLocations.ts
+│  ├─ useOrderStatusSync.ts
+│  └─ useTrackButtonClick.ts
 ├─ lib
 │  ├─ constant.ts
 │  ├─ rate-limit.ts
@@ -134,8 +164,23 @@ ecommerce-with-sanity
 ├─ providers
 │  └─ ToastProvider.tsx
 ├─ public
+│  ├─ fb.svg
+│  ├─ grid.svg
+│  ├─ hero.jpg
+│  ├─ hero1.webp
+│  ├─ hero2.webp
+│  ├─ hero3.webp
 │  ├─ heroBanner.webp
-│  └─ notFound.png
+│  ├─ notFound.png
+│  ├─ testimonial1.jpg
+│  ├─ testimonial2.jpg
+│  ├─ testimonial3.jpg
+│  ├─ testimonial4.jpg
+│  ├─ testimonial5.jpg
+│  ├─ testimonial6.jpg
+│  ├─ testimonial7.jpg
+│  ├─ testimonial8.jpg
+│  └─ whatsapp.svg
 ├─ README.md
 ├─ sanity
 │  ├─ env.ts
@@ -158,10 +203,17 @@ ecommerce-with-sanity
 │  ├─ schemaTypes
 │  │  ├─ blockContent.ts
 │  │  ├─ category.ts
+│  │  ├─ color.ts
 │  │  ├─ index.ts
+│  │  ├─ opjects
+│  │  │  ├─ colorValue.ts
+│  │  │  ├─ optionValue.ts
+│  │  │  ├─ productOption.ts
+│  │  │  └─ productVariant.ts
 │  │  ├─ order.ts
 │  │  ├─ product.ts
-│  │  └─ sale.ts
+│  │  ├─ sale.ts
+│  │  └─ size.ts
 │  └─ structure.ts
 ├─ sanity.cli.ts
 ├─ sanity.config.ts

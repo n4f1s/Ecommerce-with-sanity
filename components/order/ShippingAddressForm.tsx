@@ -273,7 +273,7 @@ export default function ShippingAddressForm({
 
       // Handle validation error (400)
       if (res.status === 400) {
-        toast.error(data.error || "অবৈধ তথ্য। অনুগ্রহ করে সঠিক তথ্য দিন।");
+        toast.error(data.error || "অনুগ্রহ করে সঠিক তথ্য দিন।");
         console.error("Validation errors:", data.details);
         return;
       }
@@ -286,7 +286,6 @@ export default function ShippingAddressForm({
         return;
       }
 
-            // 5) Success path: record a client-side success marker
       // Note: For true ecommerce revenue reporting, also send a GA4 'purchase' via GTM on the Thank You page
       trackClick("purchase_success", {
         placement: "checkout_form_submit",
@@ -333,7 +332,7 @@ export default function ShippingAddressForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-6 rounded-lg shadow-sm border space-y-4"
+      className="bg-white sm:p-6 rounded-lg space-y-4 border-none sm:shadow"
       autoComplete="on"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
