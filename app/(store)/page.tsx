@@ -185,9 +185,9 @@ export default async function Home() {
                       </div>
                     </div>
                     {/* Meta + CTA rail (compact) */}
-                    <div className="flex flex-col justify-between py-5 pr-5 sm:p-6 gap-20">
+                    <div className="flex flex-col justify-between py-5 pr-5 sm:pr-6">
                       <div className="mt-4">
-                        <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-800 line-clamp-6">
                           {product.name ?? "Product"}
                         </h3>
                       </div>
